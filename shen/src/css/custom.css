@@ -1,0 +1,24 @@
+/* Shen docs – custom styles */
+
+:root {
+  --ifm-color-primary: #0ea5e9;
+  --ifm-color-primary-dark: #0390d1;
+  --ifm-color-primary-darker: #0388c5;
+  --ifm-color-primary-darkest: #0270a2;
+  --ifm-color-primary-light: #24aff0;
+  --ifm-color-primary-lighter: #30b3f1;
+  --ifm-color-primary-lightest: #5ec4f4;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #38bdf8;
+  --ifm-color-primary-dark: #10b0f6;
+  --ifm-color-primary-darker: #05aaf5;
+  --ifm-color-primary-darkest: #048dcb;
+  --ifm-color-primary-light: #60ccfa;
+  --ifm-color-primary-lighter: #6ecefb;
+  --ifm-color-primary-lightest: #9adcfc;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}

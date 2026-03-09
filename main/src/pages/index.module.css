@@ -1,0 +1,28 @@
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.projects {
+  padding: 4rem 0;
+}
+
+.projectCard {
+  margin-bottom: 2rem;
+}
+
+.badge {
+  background-color: var(--ifm-color-primary);
+  color: white;
+  margin-bottom: 0.5rem;
+}

@@ -1,0 +1,24 @@
+/* Aethersea – main site custom styles */
+
+:root {
+  --ifm-color-primary: #6366f1;
+  --ifm-color-primary-dark: #4f52ef;
+  --ifm-color-primary-darker: #4245ee;
+  --ifm-color-primary-darkest: #1c20e9;
+  --ifm-color-primary-light: #777af3;
+  --ifm-color-primary-lighter: #8487f4;
+  --ifm-color-primary-lightest: #ababf8;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #818cf8;
+  --ifm-color-primary-dark: #6a76f6;
+  --ifm-color-primary-darker: #5f6cf5;
+  --ifm-color-primary-darkest: #3240f2;
+  --ifm-color-primary-light: #98a2fa;
+  --ifm-color-primary-lighter: #a5aefb;
+  --ifm-color-primary-lightest: #c8ccfd;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}

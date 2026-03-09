@@ -1,0 +1,24 @@
+/* Leviathan docs – custom styles */
+
+:root {
+  --ifm-color-primary: #10b981;
+  --ifm-color-primary-dark: #0ea673;
+  --ifm-color-primary-darker: #0d9d6c;
+  --ifm-color-primary-darkest: #0b8159;
+  --ifm-color-primary-light: #1fca93;
+  --ifm-color-primary-lighter: #2cce99;
+  --ifm-color-primary-lightest: #56d9ae;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #34d399;
+  --ifm-color-primary-dark: #18cc8c;
+  --ifm-color-primary-darker: #12c886;
+  --ifm-color-primary-darkest: #0fa46e;
+  --ifm-color-primary-light: #50daa6;
+  --ifm-color-primary-lighter: #5ddcac;
+  --ifm-color-primary-lightest: #84e6bf;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
