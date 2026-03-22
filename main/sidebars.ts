@@ -7,6 +7,11 @@ const sidebars: SidebarsConfig = {
       label: 'About',
       items: ['intro', 'architecture'],
     },
+    {
+      type: 'category',
+      label: 'Components',
+      items: ['clipboard-helper'],
+    },
   ],
 };
 

@@ -17,6 +17,11 @@ const sidebars: SidebarsConfig = {
       label: 'Reference',
       items: ['configuration', 'keyboard-shortcuts'],
     },
+    {
+      type: 'category',
+      label: 'Development',
+      items: ['development'],
+    },
   ],
 };
 

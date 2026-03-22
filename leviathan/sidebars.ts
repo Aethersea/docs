@@ -17,6 +17,11 @@ const sidebars: SidebarsConfig = {
       label: 'Advanced',
       items: ['pairing', 'networking', 'security'],
     },
+    {
+      type: 'category',
+      label: 'Development',
+      items: ['development', 'architecture-internal'],
+    },
   ],
 };
 
