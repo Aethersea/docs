@@ -9,8 +9,7 @@ This guide covers building Leviathan from source and understanding the project l
 ## Prerequisites
 
 - **Go 1.24** or later
-- **C/C++ toolchain** (for CGO)
-  - macOS: Xcode Command Line Tools
+- **C toolchain** (for CGO)  - macOS: Xcode Command Line Tools
   - Windows: MSVC or MinGW with AVX2/SSE2 support
 - **protoc** (Protocol Buffers compiler)
 - **protoc-gen-go** and **protoc-gen-go-grpc** plugins
