@@ -73,7 +73,7 @@ shen/
 |---|---|
 | Renderer | React 19 + TypeScript + MUI 7 + Zustand 5 |
 | Build tool | Vite 6 + electron-vite 5 |
-| Main / Preload | Electron 35 + TypeScript |
+| Main / Preload | Electron 41 + TypeScript |
 | Native addon | Rust (napi-rs 2) compiled to `.node` shared library |
 | Signaling | gRPC via `tonic` → Leviathan server |
 | Media transport | Browser-native WebRTC `RTCPeerConnection` |
