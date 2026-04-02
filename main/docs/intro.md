@@ -19,11 +19,15 @@ sidebar_position: 1
 
 ### Shen (Client)
 
-[Shen](https://shen.theaethersea.com) is the cross-platform client built with Electron + Rust. It connects to a Leviathan server, decodes the incoming stream, and renders it with minimal delay.
+[Shen](https://shen.theaethersea.com) is the cross-platform client that connects to a Leviathan server, decodes the incoming stream, and renders it with minimal delay.
 
-- Available on Windows, macOS, and Linux
-- Hardware-accelerated decoding
+- **Desktop** (Electron + Rust) — Windows, macOS, Linux
+- **iOS** (Swift) — iPhone and iPad
+- **Android** (Kotlin) — phones and tablets
+- Hardware-accelerated decoding on all platforms
+- Multi-session support — connect to multiple servers simultaneously
 - Full input support including gamepad passthrough
+- Real-time performance overlay with network RTT and FEC stats
 - Clipboard synchronization
 
 ## Architecture

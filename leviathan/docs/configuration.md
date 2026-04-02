@@ -25,7 +25,7 @@ fps = 60
 hdr = false
 
 [encoding]
-codec = "h265"          # "h264" or "h265"
+codec = "h265"          # "h265" or "av1"
 encoder = "auto"        # "auto", "nvenc", "amf", "videotoolbox", "software"
 bitrate = 50000         # kbps
 min_bitrate = 5000
@@ -60,7 +60,7 @@ enabled = true
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `codec` | `"h265"` | Video codec: `"h264"` or `"h265"` |
+| `codec` | `"h265"` | Video codec: `"h265"` or `"av1"` |
 | `encoder` | `"auto"` | Encoder backend (see [Encoding](./encoding)) |
 | `bitrate` | `50000` | Initial bitrate in kbps |
 | `min_bitrate` | `5000` | Minimum adaptive bitrate |

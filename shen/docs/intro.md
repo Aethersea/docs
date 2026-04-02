@@ -13,23 +13,39 @@ sidebar_position: 1
 | Windows (x64) | ✅ Supported |
 | macOS (Apple Silicon) | ✅ Supported |
 | macOS (Intel) | ✅ Supported |
+| iOS (iPhone / iPad) | ✅ Supported |
+| Android | ✅ Supported |
 | Linux (x64) | 🚧 Experimental |
 
 ## Key Features
 
-- **Hardware-accelerated decoding** — uses D3D11VA / NVDEC on Windows and VideoToolbox on macOS for smooth playback at full resolution
+- **Hardware-accelerated decoding** — uses D3D11VA / NVDEC on Windows, VideoToolbox on macOS/iOS, and MediaCodec on Android
 - **Ultra-low latency** — end-to-end latency under 20 ms on a local network
-- **Full input support** — keyboard, mouse, scroll, and gamepad passthrough
+- **Multi-session** — connect to multiple Leviathan servers simultaneously (desktop)
+- **Full input support** — keyboard, mouse, scroll, gamepad passthrough, and remote desktop mode
+- **Performance overlay** — real-time RTT, FEC stats, frame rate, and codec information
 - **Clipboard sync** — seamless copy-paste between host and client
 - **Secure connection** — encrypted transport with authenticated pairing
 
 ## Architecture
 
-Shen is built with:
+### Desktop (Windows / macOS / Linux)
 
 - **Electron** for the app shell and UI
 - **Rust** (`shen-native`) for performance-critical paths: stream decoding, input handling, audio playback
 - **Protocol Buffers** for the control plane communication with Leviathan
+
+### iOS
+
+- **Swift** with SwiftUI for the UI
+- **Rust** (via FFI) for WebRTC, stream decoding, and media delivery
+- Zero-copy frame delivery with dedicated OS threads for video and audio
+
+### Android
+
+- **Kotlin** with Jetpack Compose for the UI
+- **Rust** (via JNI) for WebRTC, stream decoding, and media delivery
+- Hardware-backed credential storage via Android KeyStore (AES-256-GCM)
 
 ## Next Steps
 

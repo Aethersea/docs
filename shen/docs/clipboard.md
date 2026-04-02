@@ -8,8 +8,10 @@ Shen supports bidirectional clipboard synchronisation with the host.
 
 ## How It Works
 
-- **Windows / Linux**: Clipboard access is handled directly by the Electron renderer.
+- **Windows / Linux**: Clipboard access is handled directly by the Electron renderer. Text content is transmitted using **base64 encoding** for improved compatibility with special characters and encoding edge cases.
 - **macOS**: Due to macOS sandbox restrictions, a helper process (`clipboard-helper`) runs alongside Shen. It bridges the Electron renderer to the native `NSPasteboard` and communicates via a local Unix socket.
+
+Content type priority: images → files → text.
 
 ## Supported Content Types
 
