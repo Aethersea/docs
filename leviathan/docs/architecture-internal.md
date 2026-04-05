@@ -42,6 +42,7 @@ gRPC (TLS) Session stream
    - Injects encoded tracks into the WebRTC media connection.
 4. The control DataChannel handles input events, clipboard sync, cursor overlays, and file transfers.
 5. The telemetry DataChannel sends periodic heartbeats with RTT measurements derived from RTCP Receiver Reports.
+6. If the client did not set `AudioConfig.play_on_host`, the `internal/hostaudio` package mutes the host's default render endpoint for the duration of the session (Sunshine-compatible behaviour). A refcount ensures the host is unmuted only after the last "mute-requesting" session ends, and the endpoint's original mute state is restored rather than unconditionally cleared.
 
 ## Platform Support Matrix
 
@@ -50,6 +51,7 @@ gRPC (TLS) Session stream
 | Screen capture | ScreenCaptureKit via CaptureHub (CGO) | DXGI Desktop Duplication via CaptureHub (CGO) | stub |
 | Video encode | VideoToolbox + SVT-AV1 (CGO) | Media Foundation + SVT-AV1 (CGO) | stub |
 | Audio encode | libopus (CGO) | libopus (CGO) | stub |
+| Host audio mute | CoreAudio (CGO) | IAudioEndpointVolume (CGO) | stub |
 | Input injection | CGEvent / Objective-C | SendInput + ViGEm | stub |
 | Cursor capture | NSCursor | GetCursorInfo | stub |
 | Clipboard | NSPasteboard + helper IPC | Win32 Clipboard (base64 text encoding) | stub |

@@ -17,6 +17,10 @@ Shen receives the H.265 (HEVC) or AV1 video stream from Leviathan and decodes it
 
 Remote audio is decoded from Opus and played back with low latency. On desktop, a dedicated audio worklet minimises buffering artefacts. On iOS, a dedicated `OpusAudioPlayer` decodes Opus packets to PCM and renders via `AVAudioEngine` with low-latency buffering.
 
+### Play audio on host
+
+By default, the host PC is muted for the duration of a streaming session so that audio only plays on the client. Enable **Play audio on host** in the stream settings if you want the host to keep playing audio locally in parallel with the stream (e.g. so people physically near the host can still hear game audio). The host's original mute state is restored when the session ends; concurrent sessions are refcounted so the host stays muted as long as any session has the option off.
+
 ## Multi-Session (Desktop)
 
 Shen Desktop supports connecting to multiple Leviathan servers simultaneously. Each streaming session opens in its own window, and the home screen shows live status indicators for active sessions. You can start and stop individual sessions independently.
