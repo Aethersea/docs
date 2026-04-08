@@ -20,7 +20,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Development',
-      items: ['development'],
+      items: ['development', 'fec'],
     },
   ],
 };
