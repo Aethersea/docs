@@ -19,8 +19,8 @@ Byte 2-3:   dataShardCount    (u16 BE, number of data packets in this FEC block)
 Byte 4-5:   baseSequenceNumber(u16 BE, first RTP sequence number of this FEC block)
 ```
 
-- **Extension ID**: 9 (RFC 8285 one-byte format, ID range 1-14)
-- **Extension URI**: `urn:leviathan:fec` (negotiated via SDP `a=extmap`)
+- **Extension URI**: `urn:leviathan:fec` (RFC 8285 one-byte format, ID range 1-14)
+- **Extension ID**: dynamically obtained from the SDP `a=extmap:N urn:leviathan:fec` line. The server uses 9 by default, but all three clients (desktop, Android, iOS) parse the negotiated ID from the server's SDP offer instead of hardcoding it. A fallback scan over all 6-byte extensions is retained as a safety net
 
 ## RS Parameter Calculation
 
@@ -145,20 +145,18 @@ Large frames may be split into **multiple independent FEC blocks**, each with it
 - Parity packets are consumed (not forwarded downstream) and registered with the FecReceiver
 - Recovered packets are buffered and returned on subsequent `read()` calls
 - Expired blocks are cleaned up periodically every 200ms
-- Extension ID is parsed dynamically from SDP
+- Extension ID is parsed dynamically from the server's SDP offer
 
 ### iOS (shen-ios)
 
-- **Language**: Swift (pure Swift GF(2^8) implementation) + Rust backend
-- **RS library**: Pure Swift `ReedSolomon` struct using Vandermonde matrix + GF(2^8) Gaussian elimination
-- **Integration**: Swift Actor model (thread-safe)
+- **Language**: Rust (shared design with shen desktop, exposed to Swift via FFI)
+- **RS library**: `reed-solomon-erasure` crate v6.0
+- **Integration**: Processed directly in the H.265 / AV1 RTP reader loops, not as a WebRTC Interceptor
 - **Core files**:
-  - `shen-ios/Shen/Services/FEC/FECReceiver.swift` — FEC receiver (Actor)
-  - `shen-ios/Shen/Services/FEC/ReedSolomon.swift` — pure Swift RS implementation
-  - `shen-ios/Shen/Services/FEC/FECBlock.swift` — block management
-  - `shen-ios/Shen/Services/FEC/FECStats.swift` — statistics
-- GF(2^8) uses primitive polynomial `0x11D` (x^8 + x^4 + x^3 + x^2 + 1)
-- Finite field arithmetic accelerated via lookup tables (`expTable`/`logTable`)
+  - `shen-ios/native/src/fec.rs` — FecInfo / FecBlock / RS recover (ported from `shen/native/src/leviathan/fec.rs`)
+  - `shen-ios/native/src/media.rs` — RTP loop integration (`read_h265_rtp` and `read_av1_rtp` both call `extract_fec_info_from_rtp`)
+- Extension ID is parsed dynamically from the server's SDP offer (shared `parse_fec_extension_id_from_sdp` helper, mirrors the desktop implementation)
+- The legacy `shen-ios/Shen/Services/FEC/*.swift` files (pure Swift `ReedSolomon` / `FECReceiver` / `FECBlock` / `FECStats`) are **dead code** — superseded by the Rust backend and no longer referenced by any caller
 
 ## Statistics and Monitoring
 
@@ -185,13 +183,4 @@ Exported as JSON via `to_json()` for real-time monitoring.
 
 ### iOS
 
-`FECStats` struct (`Sendable`):
-
-| Field | Description |
-|-------|-------------|
-| `completedFrames` | Frames received complete (no recovery needed) |
-| `recoveredFrames` | Frames recovered via RS |
-| `failedFrames` | Frames that failed recovery |
-| `recoveredPackets` | Total number of recovered packets |
-
-Provides a `recoveryRate` computed property (recovery success rate).
+Same global atomics as desktop (`STATS_FEC_RECOVERED` / `STATS_FEC_FAILED`), surfaced to the Swift UI through `MediaStatsEvent` once per second. The `PerformanceOverlay` shows `FEC recovery: X.XX% (N OK / M fail)`.
