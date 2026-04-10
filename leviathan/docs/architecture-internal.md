@@ -36,6 +36,7 @@ gRPC (TLS) Session stream
 3. The platform-specific pipeline (`darwinPipeline` or `windowsPipeline`) is started, which:
    - Subscribes to the shared `CaptureHub` instance (creates one if none exists).
    - Receives raw frames via per-subscriber channels and feeds them to the hardware encoder.
+   - On Windows, if another session is already subscribed to the same hub, the encoder is automatically promoted to **cross-device mode**: it allocates its own D3D11 device instead of reusing the capture's shared device, preventing two encoders from contending on the same Video Processor immediate context.
    - Encodes video to H.265 or AV1 RTP packets using a long GOP strategy (no periodic IDR — keyframes are on-demand only).
    - Encodes system audio to Opus RTP packets.
    - Applies Reed-Solomon FEC with dynamic overhead (5–25%) based on measured RTT.

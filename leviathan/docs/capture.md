@@ -12,6 +12,16 @@ Leviathan uses a **CaptureHub** abstraction to share a single capture instance a
 
 Each subscriber receives its own set of GPU texture buffers. On Windows, the texture pool grows dynamically (up to 24 textures) based on the number of active subscribers, with ~6 textures per subscriber for in-flight buffering. On macOS, `CVPixelBuffer` reference counting ensures buffers remain valid for all subscribers.
 
+### Recovery frame edge detection
+
+When DXGI Desktop Duplication recovers from `DXGI_ERROR_ACCESS_LOST` (e.g. resolution change, secure desktop, GPU TDR), the C capture layer emits a burst of *fallback* frames marked `RecoveryFrame=true` so encoders know to force a fresh IDR. CaptureHub collapses this burst into a **single edge** per recovery episode: only the first frame of each episode reaches subscribers with `RecoveryFrame=true`; the remainder of the burst is delivered with the flag cleared. Without this de-duplication, every fallback frame would trigger an IDR on every subscriber, producing an IDR storm that flickers all connected clients.
+
+### Multi-subscriber encoder isolation (Windows)
+
+When a second session subscribes to a hub that already has an active subscriber, the new session's pipeline is automatically promoted to **cross-device encoder mode** — its NVENC/MFT encoder allocates its own D3D11 device instead of reusing the capture's shared device. This is critical because the D3D11 Video Processor used for BGRA→NV12 conversion serializes work on the immediate context: two encoders sharing one device would cause per-frame VP times to spike from `<1ms` to `30–90ms`, dropping frames on the existing client and triggering a recovery loop. Cross-device costs one cross-adapter texture copy per frame but eliminates the contention.
+
+The first subscriber may also be promoted to cross-device retroactively if both sessions race to subscribe.
+
 ## Windows — DXGI Desktop Duplication
 
 On Windows, Leviathan uses the **DXGI Desktop Duplication API** to capture frames directly from the GPU framebuffer. This is a zero-copy path that does not require any intermediate CPU copy.
