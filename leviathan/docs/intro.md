@@ -24,7 +24,7 @@ sidebar_position: 1
 - **Full input injection** — keyboard, mouse, and gamepad input received from Shen is injected into the OS
 - **Telemetry** — real-time RTT measurement and network quality stats via dedicated DataChannel
 - **Adaptive FEC** — dynamic Forward Error Correction based on network conditions
-- **Secure pairing** — PIN-based pairing with persistent encrypted credentials
+- **Secure pairing** — Argon2id password pairing with DTLS fingerprint pinning for subsequent sessions
 - **Clipboard sync** — bidirectional clipboard between host and client
 
 ## Architecture

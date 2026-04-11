@@ -4,89 +4,68 @@ sidebar_position: 5
 
 # Encoding
 
-Leviathan supports multiple hardware encoder backends.
+Leviathan encodes captured frames in H.265 (HEVC) or AV1 using a hardware-accelerated backend selected per platform. All encoder settings live under the `[video]` section of `config.toml`.
 
 ## Encoder Selection
 
-Set `encoder` in `config.toml` to one of:
+Set `video.encoder` to one of:
 
 | Value | Description |
 |-------|-------------|
-| `"auto"` | Automatically select the best available encoder |
-| `"nvenc"` | NVIDIA NVENC (requires NVIDIA GPU) |
-| `"amf"` | AMD AMF (requires AMD GPU) |
-| `"qsv"` | Intel Quick Sync Video (requires Intel GPU / iGPU) |
-| `"videotoolbox"` | Apple VideoToolbox (macOS only) |
-| `"software"` | Software (SVT-AV1 / libx265) — fallback, high CPU usage |
+| `"auto"` | Pick the best available backend for the current platform/GPU. Default. |
+| `"nvenc"` | NVIDIA NVENC (Windows; requires NVIDIA GPU) |
+| `"amf"` | AMD AMF (Windows; requires AMD GPU) |
+| `"qsv"` | Intel Quick Sync Video (Windows; requires Intel GPU / iGPU) |
+| `"software"` | CPU encoding via SVT-AV1 / libx265 fallback. High CPU usage. |
+
+> **Note:** macOS always uses **VideoToolbox** when running on macOS, regardless of the `encoder` value (the per-platform `pipeline_darwin.go` selects it directly). The `encoder` config keys above describe the Windows backend matrix.
+
+```toml
+[video]
+encoder = "auto"
+default_codec = "hevc"
+```
 
 ## Supported Codecs
 
-| Codec | Description |
+| Value | Description |
 |-------|-------------|
-| `"h265"` | H.265 (HEVC) — widely supported, good quality/performance balance |
-| `"av1"` | AV1 — ~30% more efficient than HEVC at equivalent quality |
+| `"hevc"` | H.265 / HEVC — widely supported, best quality/performance balance today |
+| `"av1"` | AV1 — ~30% more efficient than HEVC at equivalent quality (requires AV1-capable encoder hardware) |
 
-## NVIDIA NVENC
+The default codec is set via `video.default_codec`. Clients may also request a specific codec per session via `SessionConfig.codec`.
 
-NVENC uses the dedicated hardware encoder on NVIDIA GPUs (Kepler or newer). Recommended for the best quality-to-performance ratio on Windows.
+## Bitrate
 
-Requires NVIDIA driver **522.25** or later.
-
-```toml
-[encoding]
-encoder = "nvenc"
-codec = "h265"
-```
-
-## AMD AMF
-
-AMF uses the Video Coding Engine (VCE) on AMD GPUs. Supported on RX 400 series and newer.
+Leviathan uses adaptive bitrate (ABR) bounded by an explicit min/max in kbps:
 
 ```toml
-[encoding]
-encoder = "amf"
-codec = "h265"
+[video]
+max_bitrate_kbps = 50000
+min_bitrate_kbps = 1000
 ```
 
-## Apple VideoToolbox
+| Key | Default | Description |
+|-----|---------|-------------|
+| `max_bitrate_kbps` | `50000` | Adaptive ceiling. For local gigabit networks, raising this to `100000`–`150000` gives near-lossless quality at the cost of LAN bandwidth. |
+| `min_bitrate_kbps` | `1000` | Adaptive floor. The bitrate controller will not drop below this even on degraded networks. |
 
-On macOS, VideoToolbox provides hardware H.265 encoding on all Apple Silicon Macs and most Intel Macs with a T-series chip.
-
-```toml
-[encoding]
-encoder = "videotoolbox"
-codec = "h265"
-```
-
-## Bitrate & Quality
-
-Leviathan uses adaptive bitrate control. The initial bitrate targets can be set:
-
-```toml
-[encoding]
-bitrate = 50000      # kbps – starting bitrate
-min_bitrate = 5000   # kbps – minimum (poor network)
-max_bitrate = 100000 # kbps – maximum (local network)
-```
-
-For a local gigabit network, setting `max_bitrate = 150000` (150 Mbps) provides near-lossless quality. For WAN connections, keep `max_bitrate` under `20000`.
+The runtime target moves between these bounds based on RTCP loss reports and the GCC delay-gradient signal.
 
 ## Keyframe Strategy
 
-Leviathan uses a **long GOP** (Group of Pictures) strategy instead of periodic IDR frames. The GOP length is set to 1 minute (`fps × 60` frames), which avoids the large bitrate spikes (300+ KB) that periodic IDR frames cause — these spikes can congest the network and cause visible stutter.
+Leviathan uses a **long GOP** (Group of Pictures) strategy instead of periodic IDR frames. The GOP length is set to roughly 1 minute (`fps × 60` frames), avoiding the large bitrate spikes that periodic IDRs would cause — those spikes can congest the network and produce visible stutter.
 
-When a client needs recovery (e.g. after packet loss), it sends an explicit **IDR request** via the control channel, and Leviathan responds with an on-demand keyframe. This approach provides smoother bitrate distribution while maintaining fast error recovery.
+When a client needs recovery (e.g. after unrecoverable packet loss), it sends an explicit **IDR request** via the control DataChannel and Leviathan responds with an on-demand keyframe. This gives smoother bitrate distribution while keeping fast error recovery.
 
 ## Forward Error Correction (FEC)
 
-Reed-Solomon FEC is applied to encoded packets. The FEC overhead percentage is dynamically adjusted based on network conditions:
+Reed-Solomon FEC parity packets are added to each encoded frame so the client can recover from limited UDP loss without round-tripping a retransmission request. The FEC overhead percentage is dynamically adjusted based on measured loss and the GCC delay-gradient signal:
 
-| Network Type | RTT | FEC Overhead |
-|-------------|-----|-------------|
-| LAN | < 5 ms | 5% |
-| Local | < 20 ms | 10% |
-| Regional | < 80 ms | 15% |
-| Long-haul | < 150 ms | 20% |
-| Intercontinental | > 150 ms | 25% |
+- `delay_gradient ≈ 0` and `loss > 0` → random loss (e.g. WiFi); **increase** FEC.
+- `delay_gradient ↑` and `loss > 0` → congestion loss; **decrease** FEC.
+- `delay_gradient ↑` and `loss ≈ 0` → early congestion; **preemptively reduce** FEC.
 
-When RTT is unavailable (no RTCP Sender Report received), Leviathan falls back to jitter-based estimation.
+This avoids the "FEC death spiral" where congestion-induced loss triggers more FEC, which consumes more bandwidth, which causes more congestion.
+
+When RTT is unavailable (no RTCP Receiver Report yet), Leviathan falls back to jitter-based estimation for the network-quality classification.

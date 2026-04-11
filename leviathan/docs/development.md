@@ -9,10 +9,11 @@ This guide covers building Leviathan from source and understanding the project l
 ## Prerequisites
 
 - **Go 1.24** or later
-- **C toolchain** (for CGO)  - macOS: Xcode Command Line Tools
-  - Windows: MSVC or MinGW with AVX2/SSE2 support
+- **C toolchain** (for CGO):
+  - macOS: Xcode Command Line Tools
+  - Windows: **clang (LLVM)** with the `windows-gnu` target. The Makefile sets `CC` / `CXX` accordingly. MinGW may still be present on `PATH` because it provides `ld.exe` and a few runtime libs the linker needs, but the C front-end is clang.
 - **protoc** (Protocol Buffers compiler)
-- **protoc-gen-go** and **protoc-gen-go-grpc** plugins
+- **protoc-gen-go** and **protoc-gen-go-grpc** plugins (run `make deps` to install)
 
 ## Build Commands
 
@@ -40,19 +41,21 @@ make lint         # golangci-lint run ./...
 ```
 leviathan/
 ├── cmd/
-│   ├── main.go             # Entry point: CLI flags, config, SessionManager, gRPC server
+│   ├── main.go             # Entry point: cobra CLI, config, SessionManager, gRPC server
 │   └── debug/              # Debug dashboard tool (no CGO)
 ├── internal/
 │   ├── streaming/          # Central pipeline orchestrator, SessionManager, FEC, RTCP, telemetry
 │   ├── capture/            # Screen capture (ScreenCaptureKit / DXGI via CGO)
-│   ├── encoder/            # Video + audio encoding (VideoToolbox / Media Foundation via CGO)
+│   ├── encoder/            # Video encoding (VideoToolbox / Media Foundation / SVT-AV1 via CGO)
 │   ├── audio/              # Opus audio encoding via CGO
-│   ├── input/              # Virtual input injection via CGO
+│   ├── hostaudio/          # Mute/restore the host's default render endpoint while streaming
+│   ├── input/              # Virtual input injection via CGO (SendInput / ViGEm / CGEvent)
 │   ├── cursor/             # Cursor capture + WebP overlay via CGO
 │   ├── clipboard/          # Clipboard sync (NSPasteboard / Win32 + helper IPC on macOS)
 │   ├── filetransfer/       # File transfer over WebRTC DataChannel
-│   ├── signaling/          # gRPC server (SDP/ICE exchange, display refresh rate detection)
-│   ├── pairing/            # Trust store: hashed credential management
+│   ├── signaling/          # gRPC server (SDP/ICE exchange, pairing, management RPCs)
+│   ├── pairing/            # Trust store: Argon2id credentials + DTLS fingerprint store
+│   ├── service/            # Windows SCM / macOS launchd service install/uninstall
 │   ├── config/             # TOML config loading
 │   └── crypto/             # TLS certificate management
 ├── proto/                  # .proto sources + generated Go files
@@ -73,9 +76,17 @@ leviathan/
 | `pelletier/go-toml/v2` | TOML configuration |
 | `klauspost/reedsolomon` | Reed-Solomon FEC |
 
-## CLI Flags
+## CLI
 
-```bash
-leviathan --grpc-port <port>     # gRPC server port
-leviathan --set-credentials      # Interactive credential setup mode
+The CLI is built with [cobra](https://github.com/spf13/cobra). The root command runs the streaming server; subcommands handle credentials and service installation.
+
 ```
+leviathan [--grpc-port <port>]                 Run the streaming server (default port 21218)
+leviathan set-credentials --username <u>       Set the server pairing credentials
+                         --password <p>
+leviathan service install [--grpc-port <port>] Register the system service
+                                                 (Windows SCM / macOS launchd LaunchAgent)
+leviathan service uninstall                    Remove the system service
+```
+
+The `--grpc-port` flag is a persistent flag on the root command, so it can be passed to `service install` to bake a custom port into the registered service.

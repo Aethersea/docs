@@ -24,52 +24,34 @@ The first subscriber may also be promoted to cross-device retroactively if both 
 
 ## Windows — DXGI Desktop Duplication
 
-On Windows, Leviathan uses the **DXGI Desktop Duplication API** to capture frames directly from the GPU framebuffer. This is a zero-copy path that does not require any intermediate CPU copy.
+On Windows, Leviathan uses the **DXGI Desktop Duplication API** to capture frames directly from the GPU framebuffer as `BGRA8` textures. This is a zero-copy path that does not require any intermediate CPU copy on the way into the encoder.
 
 - Supports all GPUs (NVIDIA, AMD, Intel)
-- Supports HDR capture (when `hdr = true` in config)
-- Captures the primary monitor by default; multi-monitor is configurable
+- Always captures the **primary display** (display ID `0`); multi-monitor selection is not yet exposed in the config schema
 - Automatic DXGI output re-enumeration on desktop switches (UAC prompts, lock screen, RDP disconnect) to prevent stale capture handles
-
-### HDR Compatibility
-
-When HDR is enabled, the desktop uses `DXGI_FORMAT_R16G16B16A16_FLOAT`. Leviathan automatically detects this and uses the `IDXGIOutput5::DuplicateOutput1` API for HDR-safe capture, falling back to the legacy `DuplicateOutput` on older Windows versions. The captured HDR content is tonemapped to BGRA8 by the DWM for the rest of the pipeline.
-
-### Multi-monitor
-
-```toml
-[capture]
-monitor = 0   # 0 = primary, 1 = secondary, etc.
-```
+- HDR-safe via `IDXGIOutput5::DuplicateOutput1` when the desktop is in `R16G16B16A16_FLOAT` mode — the DWM tonemaps to `BGRA8` so the rest of the pipeline stays in SDR. There is **no HDR10 passthrough** today; everything is encoded as SDR.
 
 ## macOS — ScreenCaptureKit
 
 On macOS 12.3+, Leviathan uses **ScreenCaptureKit** for low-latency screen capture.
 
-- Requires Screen Recording permission in System Settings
+- Requires Screen Recording permission in System Settings → Privacy & Security
 - Captures at the display's native resolution and refresh rate
 - Supports macOS displays including ProMotion (up to 120 Hz)
-- Pixel buffer retention via reference counting for safe multi-subscriber frame sharing
+- `CVPixelBuffer` reference counting keeps frame buffers valid across all CaptureHub subscribers for safe multi-session sharing
 
-## Frame Rate
+## Resolution & Frame Rate
 
-```toml
-[capture]
-fps = 60   # Target capture frame rate
-```
-
-The actual frame rate is limited by the display's refresh rate. On ProMotion or 144 Hz displays, values up to 120/144 are supported.
-
-## HDR
-
-HDR capture is currently supported on Windows only (requires an HDR-capable display and GPU).
+The capture resolution and frame rate are negotiated **per session** by the client (via `SessionConfig`), bounded by the limits in `config.toml`:
 
 ```toml
-[capture]
-hdr = true
+[video]
+max_width = 3840
+max_height = 2160
+max_fps = 120
 ```
 
-When HDR is enabled, Leviathan encodes in HDR10 and sets the appropriate metadata for the stream.
+The actual frame rate is also bounded by the display's refresh rate. On ProMotion or 144 Hz displays, values up to the panel rate are supported.
 
 ## Cursor Handling
 
