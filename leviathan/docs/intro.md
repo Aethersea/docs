@@ -11,21 +11,21 @@ sidebar_position: 1
 | Platform | Status |
 |----------|--------|
 | Windows 10/11 (x64) | ✅ Supported |
-| macOS 12+ (Apple Silicon) | ✅ Supported |
-| macOS 12+ (Intel) | ✅ Supported |
-| Linux (x64) | 🚧 Experimental |
+| macOS 13+ (Apple Silicon) | ✅ Supported |
+| macOS 13+ (Intel) | ✅ Supported |
+| Linux (x64) | 🚧 Stub backends only — the gRPC signaling layer runs but no media is produced. |
 
 ## Key Features
 
-- **Hardware-accelerated encoding** — H.265 and AV1 via NVENC (NVIDIA), AMF (AMD), QuickSync (Intel), VideoToolbox (Apple)
-- **Low-latency capture** — DXGI Desktop Duplication on Windows; ScreenCaptureKit on macOS, with shared CaptureHub for multi-session
-- **Multi-session** — multiple clients can stream simultaneously from a single capture instance
-- **Audio streaming** — captures system audio and forwards it to the client
-- **Full input injection** — keyboard, mouse, and gamepad input received from Shen is injected into the OS
-- **Telemetry** — real-time RTT measurement and network quality stats via dedicated DataChannel
-- **Adaptive FEC** — dynamic Forward Error Correction based on network conditions
-- **Secure pairing** — Argon2id password pairing with DTLS fingerprint pinning for subsequent sessions
-- **Clipboard sync** — bidirectional clipboard between host and client
+- **Hardware-accelerated encoding** — H.265 (HEVC) and AV1 via NVENC (NVIDIA), QSV (Intel), AMF (AMD, untested), VideoToolbox (Apple); SVT-AV1 software fallback on both platforms.
+- **Low-latency capture** — DXGI Desktop Duplication on Windows; ScreenCaptureKit on macOS; shared **CaptureHub** distributes one capture instance to all subscribed sessions.
+- **Multi-session** — multiple clients can stream simultaneously from a single capture; on Windows the second session's encoder is automatically promoted to a separate D3D11 device to avoid Video Processor contention.
+- **Audio streaming** — system audio captured via platform loopback and encoded with libopus. The host's default render endpoint is optionally muted for the duration of a session (refcounted across concurrent sessions) and restored on disconnect.
+- **Input injection** — keyboard, mouse, and touch events from Shen are injected through `SendInput` (Windows) / `CGEvent` (macOS). Virtual gamepad injection via **ViGEm** on Windows is implemented; the end-to-end gamepad path is under active development.
+- **Telemetry** — real-time RTT from RTCP Receiver Reports surfaced to the client over a dedicated DataChannel.
+- **Adaptive FEC** — Reed-Solomon Forward Error Correction with overhead tuned to measured loss and the GCC delay-gradient signal, to avoid congestion-driven FEC death-spirals.
+- **Secure pairing** — Argon2id password pairing with per-IP rate limiting; subsequent sessions authenticate by pinned DTLS fingerprint.
+- **Clipboard sync** — bidirectional text, images, and files. On macOS a bundled `clipboard-helper` process owns `NSPasteboard` so lazy/delayed rendering works correctly.
 
 ## Architecture
 

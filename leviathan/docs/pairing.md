@@ -56,6 +56,19 @@ Trusted clients are managed over the management gRPC service from the client sid
 
 Today there is no `leviathan clients` subcommand. To remove a client manually, edit `trusted_clients.json` directly and restart Leviathan, or call `Unpair` from a Shen client / the debug dashboard.
 
+## Pre-Pair Reachability
+
+`ManagementService.GetServerInfo` is the only unauthenticated RPC on the management service. While the gRPC listener uses TLS, it is configured for server-only authentication; the handler does not perform trust-store lookups or require client certificates for this specific call.
+
+This is deliberate: Shen clients need to probe a host for basic metadata — such as the server name, OS platform, hardware codecs, and primary display — before the user has entered credentials. This allows the UI to render **Online** or **Offline** status chips for newly added hosts that have not yet been paired.
+
+All Shen clients (desktop, iOS, and Android) follow a standard convention:
+
+- The `GetServerInfo` call is always made over an anonymous TLS channel, even if the client already holds pairing credentials.
+- In the Android Rust bindings, passing empty strings for `client_cert_pem` and `client_key_pem` signals the gRPC client to use `create_channel_no_client_cert`.
+
+Because the endpoint is open, it only returns non-sensitive metadata. It does not leak the trust-store contents, paired-client lists, or any credentials. All other management-plane flows that mutate state — including pairing (via server password), unpairing, and streaming session setup (via paired DTLS fingerprint) — continue to require full authentication.
+
 ## Rotating the Server Password
 
 Re-running `leviathan set-credentials` overwrites `credentials.json`. Existing paired clients are **not** invalidated — they still authenticate via their stored DTLS fingerprint. Rotating the password only affects the ability of *new* clients to pair.

@@ -1,9 +1,7 @@
 ---
 slug: welcome
 title: Welcome to Aethersea
-authors:
-  - name: Aethersea Team
-    url: https://github.com/aethersea
+authors: [aethersea]
 tags: [announcement]
 ---
 
@@ -13,10 +11,10 @@ We're excited to introduce **Aethersea** — an open-source, high-performance re
 
 ## What is Aethersea?
 
-Aethersea is a remote desktop platform built for low latency and high fidelity. It consists of two main components:
+Aethersea is a remote desktop and game streaming platform built for low latency and high fidelity. It consists of two main components:
 
-- **[Leviathan](https://leviathan.theaethersea.com)** — the server component that captures, encodes, and streams your desktop using hardware acceleration.
-- **[Shen](https://shen.theaethersea.com)** — the cross-platform client built with Electron that receives and displays streams with minimal delay.
+- **[Leviathan](https://leviathan.theaethersea.com)** — the server component (Go), which captures the host desktop, encodes with hardware acceleration (NVENC / QSV / AMF / VideoToolbox / SVT-AV1), and streams over WebRTC.
+- **[Shen](https://shen.theaethersea.com)** — the cross-platform client family. The desktop client is Electron + Rust; separate iOS and Android clients share the same WebRTC/FEC protocol.
 
 ## Why Aethersea?
 

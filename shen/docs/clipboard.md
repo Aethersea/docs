@@ -15,12 +15,12 @@ Content type priority: images → files → text.
 
 ## Supported Content Types
 
-| Type | Windows | macOS |
-|------|---------|-------|
-| Plain text | ✅ | ✅ |
-| Rich text (RTF / HTML) | ✅ | ✅ |
-| Images (PNG) | ✅ | ✅ |
-| Files | ✅ (path list) | ✅ (via clipboard-helper) |
+| Type | Windows | macOS | Linux |
+|------|---------|-------|-------|
+| Plain text | ✅ | ✅ | ✅ |
+| Rich text (RTF / HTML) | ✅ | ✅ | ✅ |
+| Images (PNG) | ✅ | ✅ | ✅ |
+| Files | ✅ (path list) | ✅ (via `clipboard-helper`) | ✅ (path list) |
 
 ## Troubleshooting
 

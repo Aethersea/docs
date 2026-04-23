@@ -4,69 +4,78 @@ sidebar_position: 3
 
 # Features
 
-## Video Streaming
+## Video
 
-Shen receives the H.265 (HEVC) or AV1 video stream from Leviathan and decodes it using the GPU, keeping CPU usage minimal even at 4K/144 Hz.
+Shen decodes the video stream from Leviathan using a GPU-accelerated path where possible and a software fallback where it isn't.
 
-| Codec | Windows | macOS | iOS | Android |
-|-------|---------|-------|-----|---------|
-| H.265 (HEVC) | ✅ | ✅ | ✅ | ✅ |
-| AV1 | ✅ | ✅ | ✅ | ✅ |
+| Codec | Windows | macOS | Linux |
+|-------|---------|-------|-------|
+| H.265 (HEVC) | D3D11VA / NVDEC | VideoToolbox | software |
+| AV1 | D3D11VA / NVDEC if supported; otherwise `rav1d` | VideoToolbox if supported; otherwise `rav1d` | `rav1d` |
+
+`rav1d` is a pure-Rust port of `dav1d` and is used as a universal fallback when hardware AV1 decode is unavailable.
 
 ## Audio
 
-Remote audio is decoded from Opus and played back with low latency. On desktop, a dedicated audio worklet minimises buffering artefacts. On iOS, a dedicated `OpusAudioPlayer` decodes Opus packets to PCM and renders via `AVAudioEngine` with low-latency buffering.
+Remote audio is decoded from Opus and played back with low latency via a dedicated audio worklet. Channel layout is configurable per server (stereo, 5.1, or 7.1).
 
 ### Play audio on host
 
-By default, the host PC is muted for the duration of a streaming session so that audio only plays on the client. Enable **Play audio on host** in the stream settings if you want the host to keep playing audio locally in parallel with the stream (e.g. so people physically near the host can still hear game audio). The host's original mute state is restored when the session ends; concurrent sessions are refcounted so the host stays muted as long as any session has the option off.
+By default, the host PC is muted for the duration of the streaming session so audio only plays on the client. Enable **Play audio on host** in the stream settings if you want the host to keep playing audio locally — useful when someone near the host also wants to hear the session. The host's original mute state is restored on disconnect, and concurrent sessions are refcounted so the host stays muted as long as any active session has the option off.
 
-## Multi-Session (Desktop)
+## Multi-Session
 
-Shen Desktop supports connecting to multiple Leviathan servers simultaneously. Each streaming session opens in its own window, and the home screen shows live status indicators for active sessions. You can start and stop individual sessions independently.
+Shen can connect to multiple Leviathan servers simultaneously. Each streaming session opens in its own window; the home screen shows live status for every active session and lets you start and stop them independently.
 
 ## Input
 
-All input events captured in the Shen window are forwarded to the host in real time:
+All input captured in the Shen window is forwarded to the host in real time.
 
 | Input Type | Notes |
 |-----------|-------|
-| Keyboard | Full key pass-through including modifier keys |
-| Mouse | Relative and absolute modes |
-| Scroll | High-precision trackpad scroll supported |
-| Gamepad | Up to 4 simultaneous controllers via XInput / SDL |
+| Keyboard | Full pass-through including modifier keys. `Ctrl+Alt+Backspace` is translated to `Ctrl+Alt+Delete` on the host. |
+| Mouse | Relative (for gaming) and absolute (remote-desktop) modes. |
+| Scroll | High-precision trackpad scroll supported. |
+| Gamepad | Up to 16 simultaneous controllers via **SDL3** (statically linked). Buttons, analog sticks, triggers, rumble (body and trigger), motion sensors, touchpad, LEDs, and battery state are all forwarded where the controller supports them. |
 
 ### Remote Desktop Mode
 
-When enabled, Shen uses absolute mouse positioning with the local cursor visible — ideal for desktop productivity use. The server-side cursor rendering is disabled automatically. On iOS, this mode uses `UIPointerInteraction` and `UIHoverGestureRecognizer` to track pointer devices (trackpad/mouse) separately from touch input.
+When enabled, Shen uses absolute mouse positioning with the local cursor visible — ideal for desktop productivity. The cursor position is forwarded to the host so Leviathan can render a cursor overlay blended into the stream.
 
 ### Pointer Lock
 
-During streaming in relative mouse mode, Shen automatically re-acquires pointer lock when the overlay is dismissed, preventing the cursor from appearing unexpectedly during gameplay.
+During streaming in relative mouse mode, Shen automatically re-acquires pointer lock whenever the overlay is dismissed, preventing the local cursor from appearing during gameplay.
+
+## Immersive Mode
+
+Immersive mode installs **global** keyboard and mouse hooks so system shortcuts (`Alt+Tab`, the Windows / Command key, `Cmd+Space`, `Ctrl+Esc`, and so on) are captured by Shen and forwarded to the host instead of being consumed by the client OS.
+
+- Toggle at runtime with `Ctrl+Shift+Alt+I`.
+- Automatically suspended while the overlay is open, while the Shen window is unfocused, and during screen lock / system sleep.
+- Only activates while the stream is actively receiving media — it will not engage during the `connecting` or `reconnecting` phases.
+- On **macOS**, the global hooks require **Accessibility** permission. If any saved server config has `immersive_mode = true`, Shen proactively requests the permission at startup so the check never blocks the first session.
 
 ## Performance Overlay
 
-A real-time performance overlay displays streaming diagnostics:
+A real-time overlay shows streaming diagnostics:
 
 - Stream resolution, codec, and configured FPS
 - Received vs rendered frame rate
-- Network round-trip time (RTT) with colour-coded health indicators (green ≤ 30 ms, yellow ≤ 80 ms, red > 80 ms)
+- Network round-trip time (RTT) with color-coded health indicators (green ≤ 30 ms, yellow ≤ 80 ms, red > 80 ms)
 - Packet loss percentage
 - FEC (Forward Error Correction) recovery rate
-- IDR frame request count
+- IDR keyframe request count
 
-RTT data is received from Leviathan via a dedicated telemetry DataChannel using RTCP Receiver Report measurements.
+RTT and loss data arrive via a dedicated **telemetry DataChannel**, which Leviathan populates from RTCP Receiver Reports.
 
 ## Clipboard Sync
 
-Text, images, and files can be copied on one machine and pasted on the other. On macOS, clipboard synchronisation is handled by the bundled **clipboard-helper** process which bridges the Electron sandbox to the native pasteboard.
-
-See [Clipboard](./clipboard) for details.
+Text, images, and files can be copied on one machine and pasted on the other. See [Clipboard](./clipboard) for platform-specific details and the macOS `clipboard-helper` architecture.
 
 ## Resolution & Refresh Rate
 
-Shen automatically negotiates the stream resolution with Leviathan. You can override this in **Settings → Display**. The default resolution on desktop is now **fullscreen** mode. On iOS, the default resolution is 2560×1440 or the host's native display dimensions.
+The stream resolution and frame rate are negotiated per session. You can pick a preset, enter a custom resolution, or select **Use host resolution** to match the server's primary display. The server caps the request to the bounds it exposes (`max_width`, `max_height`, `max_fps`).
 
-## macOS Accessibility Permission
+## HDR
 
-On macOS, if any saved stream configuration has **immersive mode** enabled, Shen proactively requests Accessibility permission on startup. This kernel-level permission check ensures global keyboard and mouse hooks work correctly during streaming. The permission dialog is only shown once; subsequent checks are silent.
+HDR streaming can be requested per session when the server advertises HDR support and the client display is in HDR mode. HDR is best-effort: Leviathan today runs the internal encode path in SDR even on HDR desktops (the DWM tonemaps before capture), so the flag primarily affects the client-side decode and display path.

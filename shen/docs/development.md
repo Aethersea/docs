@@ -24,8 +24,9 @@ npm run build:clipboard-helper # Download macOS clipboard-helper binary
 npm run build:icons            # Generate platform icons
 npm run build:frontend         # electron-vite build only (no native, no packaging)
 npm run dev                    # build:native + build:clipboard-helper + electron-vite dev (HMR port 1420)
+npm run start                  # alias for `electron-vite dev` (no native rebuild)
+npm run preview                # electron-vite preview (runs the last `npm run build` output)
 npm run build                  # Full production build: icons → native → clipboard-helper → vite build → electron-builder
-npm run start                  # electron-vite preview
 ```
 
 ## Project Structure

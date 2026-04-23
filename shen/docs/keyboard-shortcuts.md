@@ -4,26 +4,37 @@ sidebar_position: 7
 
 # Keyboard Shortcuts
 
-## Global Shortcuts
+The shortcuts below are handled **inside the Shen window** during an active streaming session. All other keys are forwarded to the host as-is — there are no home-screen or global shortcuts.
 
-These shortcuts work at all times within the Shen window.
+## Client-Side Shortcuts
+
+These combinations are intercepted by Shen and never reach the host.
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl+Alt+Shift+Q` | Disconnect and return to host list |
-| `Ctrl+Alt+Shift+F` | Toggle fullscreen |
-| `Ctrl+Alt+Shift+S` | Open Settings |
-| `Ctrl+Alt+Shift+C` | Toggle clipboard sync |
-| `Ctrl+Alt+Shift+G` | Toggle gamepad input |
+| `Ctrl+Shift+Alt+Q` | Show or hide the in-session overlay (server info, disconnect, settings). Modifier keys are released on the host when the overlay opens. |
+| `Ctrl+Shift+Alt+I` | Toggle **immersive mode** (global keyboard/mouse hooks). The toast `Immersive mode ON/OFF` briefly appears. |
+| `Ctrl+Shift+Alt+K` | **Emergency stuck-keys clear.** Immediately sends `key up` for every key Shen believes is pressed. Use this if a modifier key gets stuck on the host after Alt-Tabbing out during a session. |
+| `Escape` | When the overlay is visible, dismiss it. |
 
-## Input Capture
+## Passthrough with Server-Side Effect
 
-When connected, all keyboard input is forwarded to the host. Press `Ctrl+Alt+Shift+Q` to release input capture and return to the Shen UI.
+Shen recognizes these combinations and translates them before sending.
 
-## macOS
+| Shortcut | Sent to Host As |
+|----------|-----------------|
+| `Ctrl+Alt+Backspace` | `Ctrl+Alt+Delete` (Secure Attention Sequence). Useful because Windows reserves the actual `Ctrl+Alt+Del` for the secure desktop and it cannot be injected through the input driver. |
 
-On macOS, some system shortcuts (e.g. `Cmd+Tab`, `Cmd+Space`) are intercepted by the OS and cannot be forwarded. Use the on-screen keyboard shortcut mapper in **Settings → Input** to remap these if needed.
+## Notes on Intercepted System Shortcuts
 
-## Android
+Without immersive mode enabled, the following are **consumed by the client OS** before they reach Shen and are therefore never forwarded:
 
-When an external physical keyboard is paired, Shen Android intercepts key events at the activity's `dispatchKeyEvent` (rather than `onKeyDown`/`onKeyUp`) so that combos like `Alt+Tab`, the Search key, and the Menu key are forwarded to the host instead of being consumed by the framework. The `Home` key is reserved by Android itself and cannot be intercepted by any non-launcher app — use a remapping on the host side if you need it. Volume keys are deliberately not forwarded so that media volume continues to work locally during streaming.
+- **Windows**: `Win`, `Ctrl+Esc`, `Alt+Tab`, `Alt+Esc`, `Ctrl+Shift+Esc`
+- **macOS**: `Cmd+Tab`, `Cmd+Space`, `Cmd+Q`, Mission Control / Spaces shortcuts
+- **All platforms**: `Alt+F4`, screenshot keys, screen lock keys
+
+With **immersive mode** enabled, the native layer installs global keyboard and mouse hooks so these shortcuts are captured and forwarded to the host. Immersive mode only activates while a stream is actively receiving media — it will not engage during the `connecting` or `reconnecting` phases, nor while the overlay is visible, nor while the Shen window is unfocused. The current capture state is indicated by a small indicator in the overlay.
+
+## macOS Accessibility Permission
+
+Immersive mode on macOS requires **Accessibility** permission. If any saved server config has `immersive_mode = true`, Shen proactively requests the permission at startup. You can manage it in **System Settings → Privacy & Security → Accessibility**.

@@ -6,9 +6,10 @@ sidebar_position: 2
 
 ## Prerequisites
 
-- A host machine running Windows 10/11 or macOS 12+
-- For NVIDIA GPU encoding: a recent NVIDIA driver supporting NVENC HEVC/AV1
-- For AMD GPU encoding: a recent Adrenalin driver with AMF
+- A host machine running Windows 10/11 or macOS 13+ (Ventura or later; `clipboard-helper` requires 13).
+- For NVIDIA encoding: a recent NVIDIA driver supporting NVENC HEVC (AV1 requires Ada Lovelace or newer).
+- For Intel QSV: a Tiger Lake or newer iGPU with a current Intel graphics driver.
+- For AMD AMF: a recent Adrenalin driver. **Status:** the AMF path is implemented but untested — verify that a session starts before relying on it.
 - Network reachability for the gRPC signaling port (default `21218/TCP`) and ephemeral WebRTC UDP ports (`49152–65535`). See [Networking](./networking) for details and how to pin a fixed UDP port.
 
 ## Installation
