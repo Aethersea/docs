@@ -19,7 +19,7 @@ This documentation covers the **desktop** client (Windows, macOS, Linux). The iO
 
 ## Key Features
 
-- **Hardware-accelerated decoding** — D3D11VA / NVDEC on Windows, VideoToolbox on macOS; `rav1d` (pure-Rust) software AV1 fallback where hardware AV1 decode is unavailable.
+- **Hardware-accelerated decoding** — D3D11VA / NVDEC on Windows, VideoToolbox on macOS, VAAPI on Linux. HEVC is hardware-only (no software fallback); AV1 falls back to `rav1d` (pure-Rust) where hardware AV1 decode is unavailable.
 - **Multi-session** — connect to several Leviathan servers at once, each in its own window.
 - **Full input** — keyboard, mouse (relative and absolute), high-precision scroll, and up to 16 gamepads via SDL3 with rumble and motion sensor support where available.
 - **Immersive mode** — global keyboard and mouse hooks so system shortcuts (`Alt+Tab`, `Cmd+Tab`, Win/Cmd key, etc.) are forwarded to the host instead of being eaten by the client OS.

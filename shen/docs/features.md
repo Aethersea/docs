@@ -6,14 +6,14 @@ sidebar_position: 3
 
 ## Video
 
-Shen decodes the video stream from Leviathan using a GPU-accelerated path where possible and a software fallback where it isn't.
+Shen decodes the video stream from Leviathan on the GPU. HEVC requires a hardware decoder on every platform; if none is available the stream will not start. Only AV1 has a software fallback, because some otherwise-supported GPUs lack an AV1 hardware decoder.
 
 | Codec | Windows | macOS | Linux |
 |-------|---------|-------|-------|
-| H.265 (HEVC) | D3D11VA / NVDEC | VideoToolbox | software |
+| H.265 (HEVC) | D3D11VA / NVDEC | VideoToolbox | VAAPI |
 | AV1 | D3D11VA / NVDEC if supported; otherwise `rav1d` | VideoToolbox if supported; otherwise `rav1d` | `rav1d` |
 
-`rav1d` is a pure-Rust port of `dav1d` and is used as a universal fallback when hardware AV1 decode is unavailable.
+`rav1d` is a pure-Rust port of `dav1d` and is used as the AV1-only software fallback when hardware AV1 decode is unavailable. There is no equivalent fallback for HEVC: software HEVC decode caused devices to overheat and has been removed.
 
 ## Audio
 
