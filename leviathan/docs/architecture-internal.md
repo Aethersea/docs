@@ -70,6 +70,14 @@ On macOS, clipboard sync requires a separate helper process (`clipboard-helper`)
 
 The helper process communicates via Unix domain socket using **4-byte little-endian length-prefixed protobuf** messages. See the [Clipboard Helper](https://theaethersea.com/docs/clipboard-helper) documentation for details.
 
+## Clipboard Push Gating (Host → Client)
+
+To avoid echoing the user's own actions back to the session that just produced them, the host's `clipboardCaptureLoop` suppresses image and file / folder announcements for **2 seconds** after any keyboard, mouse, touch, or UTF-8 text-input event arrives on the control DataChannel. Plain text clipboard sync is never gated — text is small enough that immediate sync stays worthwhile even during active remote control.
+
+Gamepad input deliberately does **not** trigger the gate: Shen clients keep sending `GamepadState` packets even when the controller is idle, so counting them would keep suppression permanently active for any session with a controller plugged in.
+
+The window is defined by `remoteControlInputWindow` in `internal/streaming/pipeline.go`. Each `darwinPipeline` / `windowsPipeline` carries a `lastInputAt` atomic timestamp that the input handlers update on every received key / mouse / touch / text event; `clipboardCaptureLoop` consults it via `isRemoteControlActive()` before emitting a `ClipboardAnnouncement` for image or file content.
+
 ## Proto File Reference
 
 | File | Purpose |

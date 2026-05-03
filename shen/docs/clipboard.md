@@ -13,6 +13,10 @@ Shen supports bidirectional clipboard synchronisation with the host.
 
 Content type priority: images → files → text.
 
+## Host → Shen Push Behaviour
+
+While you are actively driving the host through Shen (keyboard, mouse, touch, or typed text), copies of **images** and **files / folders** on the host are not auto-pushed to your client for about 2 seconds — those copies are usually side effects of your own remote actions and shipping them back would just waste bandwidth. Plain text keeps syncing immediately. After a brief input pause all content types resume normal sync.
+
 ## Supported Content Types
 
 | Type | Windows | macOS | Linux |
