@@ -30,6 +30,8 @@ On first launch, macOS will prompt for several permissions depending on what you
 
 Linux builds are produced as an **AppImage** and are currently experimental. Download `Shen-<version>-x86_64.AppImage`, `chmod +x` it, and run. On distributions without a system `libfuse2`, run the AppImage with `--appimage-extract-and-run`.
 
+For Debian or Ubuntu, download `shen_<version>_amd64.deb` and install it with `sudo apt install ./shen_<version>_amd64.deb`. Using `apt` (rather than `dpkg -i`) lets it resolve runtime dependencies automatically.
+
 ## Pairing
 
 Pairing is a one-time step that establishes a trusted relationship between Shen and a Leviathan server. It is **username/password-based**, not PIN-based: the server operator sets long-lived credentials on Leviathan (`leviathan set-credentials`) and shares them with you out-of-band.

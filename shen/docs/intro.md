@@ -15,7 +15,7 @@ This documentation covers the **desktop** client (Windows, macOS, Linux). The iO
 | Windows 10/11 (x64) | ✅ Supported |
 | macOS 13+ (Apple Silicon) | ✅ Supported |
 | macOS 13+ (Intel) | ✅ Supported |
-| Linux (x64, AppImage) | 🚧 Experimental |
+| Linux (x64, AppImage / .deb) | 🚧 Experimental |
 
 ## Key Features
 
