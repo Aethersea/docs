@@ -20,7 +20,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Development',
-      items: ['development', 'architecture-internal'],
+      items: ['development', 'architecture-internal', 'crash-dumps'],
     },
   ],
 };
