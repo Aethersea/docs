@@ -41,6 +41,11 @@ const config: Config = {
   ],
 
   themeConfig: {
+    colorMode: {
+      defaultMode: 'light',
+      disableSwitch: false,
+      respectPrefersColorScheme: true,
+    },
     image: 'img/social-card.png',
     navbar: {
       title: 'Shen',
