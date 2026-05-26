@@ -115,3 +115,16 @@ Main and preload scripts are compiled to V8 bytecode via electron-vite for obfus
 - DMG with hardened runtime + entitlements
 - `clipboard-helper` binary bundled into `Helpers/`
 - `.node` files placed in `extraResources` (unpacked from asar)
+
+## Linux Packaging
+
+- AppImage + `.deb` (`electron-builder --linux`)
+- `clipboard-helper` (Qt 6) binary bundled into `extraResources/`
+- **Icons**: `linux.icon` points at the `build/icons` directory. electron-builder
+  scans that directory and only installs PNGs whose filename encodes a size (the
+  first run of digits), mapping each to `/usr/share/icons/hicolor/<size>/apps/`.
+  `generate-icons.js` therefore emits `16x16.png` … `512x512.png`. **Do not rely
+  on `icon.png` alone** — once any size-encoded PNG (e.g. the `icon-1024.png`
+  used for the macOS `.icns`) exists in the directory, electron-builder skips its
+  auto-resize fallback, so the standard hicolor sizes must be generated
+  explicitly or the installed `.deb` shows a blank application icon.

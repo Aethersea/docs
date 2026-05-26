@@ -8,7 +8,9 @@ Pairing establishes a trusted relationship between a Leviathan instance and a Sh
 
 ## How Pairing Works
 
-Pairing in Leviathan is **password-based**, not PIN-based. There is no time-limited 6-digit code; instead the operator sets a long-lived server username/password and shares it with each client they want to authorize.
+Leviathan supports two pairing methods, both backed by the same server-wide credential set: a long-lived **username + password**, and an optional **TOTP (2FA)** rolling code. A client picks one method when it pairs; either way the result is the same trusted DTLS fingerprint.
+
+### Password
 
 1. The operator sets a server username and password on Leviathan:
 
@@ -30,11 +32,19 @@ Pairing in Leviathan is **password-based**, not PIN-based. There is no time-limi
 
 5. On every subsequent session, the server matches the incoming DTLS fingerprint against the trust store. Unpaired fingerprints are rejected before the WebRTC media pipeline starts.
 
+### TOTP (2FA)
+
+As an alternative to the password, the operator can enroll a TOTP shared secret (RFC 6238: 6 digits, SHA-1, 30-second period) via the management service (`ManagementService.EnrollTOTP`), then scan the returned `otpauth://` URI into an authenticator app.
+
+When pairing with TOTP, the client sends **only the current 6-digit code** — no username. The server holds a single credential set, so possession of a valid code proves possession of the shared secret; a username adds nothing and is not required (or checked) for this method. Shen's desktop, iOS, and Android clients therefore hide the username field when the TOTP method is selected.
+
+Validation accepts ±1 period of clock skew, so a code generated near a 30-second boundary still verifies on either side. A successful TOTP pair records the client's DTLS fingerprint exactly like the password path. Rotating the password preserves the enrolled TOTP secret; call `ManagementService.DisableTOTP` to clear it.
+
 ## Storage Layout
 
 | File | Purpose |
 |------|---------|
-| `credentials.json` | Server username + Argon2id password hash + salt |
+| `credentials.json` | Server username + Argon2id password hash + salt + (optional) base32 TOTP secret and enrollment timestamp |
 | `trusted_clients.json` | Array of `{client_id, client_name, dtls_fingerprint_sha256, paired_at}` records |
 
 Both live in the per-platform config directory:

@@ -6,7 +6,7 @@ sidebar_position: 8
 
 ## Authentication
 
-All Shen clients must complete the [pairing](./pairing) flow before they can open a streaming session. Pairing is **password-based**: an operator sets a server-wide username and password via `leviathan set-credentials`, and clients submit those credentials once over the gRPC `PairingService.Pair` RPC together with the SHA-256 fingerprint of their WebRTC DTLS certificate.
+All Shen clients must complete the [pairing](./pairing) flow before they can open a streaming session. An operator sets a server-wide username and password via `leviathan set-credentials`, and clients submit those credentials once over the gRPC `PairingService.Pair` RPC together with the SHA-256 fingerprint of their WebRTC DTLS certificate. Clients may instead pair with an enrolled **TOTP (2FA)** code, which requires only the rolling 6-digit code — see [pairing](./pairing) for details.
 
 Subsequent sessions are authenticated by checking the incoming DTLS fingerprint against the trust store — the password is no longer needed once a client is paired. Unpaired fingerprints are rejected before the streaming pipeline starts.
 
