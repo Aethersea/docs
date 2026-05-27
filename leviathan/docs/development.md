@@ -21,7 +21,7 @@ This guide covers building Leviathan from source and understanding the project l
 make all          # proto + binary (default)
 make build        # build server binary → build/leviathan(.exe)
 make proto        # regenerate Go from .proto files via protoc
-make run          # build + run (macOS also downloads clipboard-helper)
+make run          # build + run (macOS/Linux also provision clipboard-helper)
 make debug        # build debug dashboard → build/leviathan-debug
 make run-debug    # build + run debug tool
 make test         # go test ./...
@@ -30,6 +30,22 @@ make deps         # go mod tidy + install protoc-gen-go plugins
 make fmt          # go fmt ./...
 make lint         # golangci-lint run ./...
 ```
+
+### clipboard-helper Provisioning (macOS / Linux)
+
+`make run` and `make bundle` pull a prebuilt `clipboard-helper` from the
+clipboard-helper repo's GitHub Releases into `build/`. The download is
+**version-aware**: it pins a release tag (default the rolling `latest`
+prerelease, refreshed by CI on every helper `master` push), stamps the
+downloaded asset's id + `updated_at` into `build/.clipboard-helper.stamp`, and
+re-downloads only when that stamp changes. This means a newly-published helper
+is actually picked up instead of a stale `build/clipboard-helper` being kept
+forever (the previous behaviour, which shipped outdated helpers in the `.app`).
+
+- `make clipboard-helper CLIPBOARD_HELPER_TAG=v1.2.3` — pin a fixed release.
+- `make clipboard-helper CLIPBOARD_HELPER_REPO=<owner>/<repo>` — use a fork.
+- If GitHub is unreachable, any existing `build/clipboard-helper` is kept; the
+  build only hard-fails when there is no local binary at all.
 
 ### Platform-specific Build Flags
 
