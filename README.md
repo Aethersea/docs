@@ -10,6 +10,16 @@ Three independent Docusaurus sites, each deployed as its own Cloudflare Pages pr
 
 All three are pinned to **Docusaurus 3.9.2** with a **`webpackbar` 7.0.0** override (the default webpackbar 6.x shipped with Docusaurus 3.9 / 3.10 trips webpack's stricter ProgressPlugin schema validation — the override is what lets production builds succeed).
 
+## UI Stack: TailwindCSS + MUI
+
+Each site layers **TailwindCSS v4** and **MUI v9 (Material UI)** on top of the Docusaurus classic theme. The wiring is identical across `main`, `shen`, and `leviathan`:
+
+- **Tailwind** — a local plugin at `src/plugins/tailwind.js` registers `@tailwindcss/postcss` in Docusaurus's PostCSS pipeline (`plugins: ['./src/plugins/tailwind.js']` in `docusaurus.config.ts`). `src/css/custom.css` imports **only** Tailwind's `theme.css` + `utilities.css` — **preflight (the global reset) is deliberately omitted** so Tailwind does not clobber Docusaurus's Infima base styles or MUI's component baseline. Tailwind is used purely as utility classes. `@source` directives scope class detection to `src/` (plus `docs/`/`blog/` MDX). Because preflight is off, border utilities need an explicit style/color (e.g. `border border-solid border-gray-300`).
+- **MUI** — `src/theme/Root.tsx` swizzles the Docusaurus `Root` to wrap the app in a MUI `ThemeProvider`. The theme uses MUI's **CSS theme variables** with `colorSchemeSelector: '[data-theme="%s"]'`, which matches the `data-theme` attribute Docusaurus already sets on `<html>` — so MUI's palette follows light/dark from pure CSS, with no flash and no manual syncing of visuals. A detached `colorSchemeNode` keeps Docusaurus the **sole owner** of `data-theme` (MUI never writes to `<html>`), and a `MutationObserver` mirrors the attribute into MUI's JS color-scheme state. `src/mui.d.ts` augments `CssThemeVariables.enabled = true` to unlock the CSS-variables typings.
+- **Per-site brand color** — each site's primary color (main = indigo, shen = sky, leviathan = emerald) is defined once in `src/css/custom.css` (Infima `--ifm-color-primary*`, used by the static `.heroGradient`) and mirrored in the MUI theme's `colorSchemes` in `src/theme/Root.tsx`.
+
+After changing dependencies, delete `node_modules` + `package-lock.json` and reinstall. Run `npm run typecheck` to validate the MUI/TS wiring and `npm run build` to confirm the production build.
+
 ## Local Development
 
 ```bash

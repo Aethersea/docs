@@ -50,7 +50,7 @@ function HomepageHeader() {
       className="heroGradient relative overflow-hidden px-4 py-16 text-center text-white md:py-24"
     >
       <Container maxWidth="md">
-        <Typography variant="h2" component="h1" fontWeight={800} color="inherit" gutterBottom>
+        <Typography variant="h2" component="h1" color="inherit" gutterBottom sx={{ fontWeight: 800 }}>
           {siteConfig.title}
         </Typography>
         <Typography variant="h5" component="p" color="inherit" sx={{ opacity: 0.9 }}>
@@ -60,7 +60,7 @@ function HomepageHeader() {
           className="mt-8"
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
-          justifyContent="center"
+          sx={{ justifyContent: 'center' }}
         >
           <Button
             component={Link}
@@ -95,9 +95,9 @@ function ProjectCard({ title, badge, description, href, icon }: Project) {
       sx={{ borderRadius: 3 }}
     >
       <CardContent className="grow">
-        <Stack direction="row" spacing={1.5} alignItems="center" className="mb-3">
+        <Stack direction="row" spacing={1.5} className="mb-3" sx={{ alignItems: 'center' }}>
           {icon}
-          <Typography variant="h5" component="h3" fontWeight={700}>
+          <Typography variant="h5" component="h3" sx={{ fontWeight: 700 }}>
             {title}
           </Typography>
           <Chip label={badge} color="primary" size="small" className="ml-auto" />
@@ -113,7 +113,7 @@ function ProjectCard({ title, badge, description, href, icon }: Project) {
   );
 }
 
-export default function Home(): JSX.Element {
+export default function Home(): React.JSX.Element {
   return (
     <Layout description="Open-source, high-performance remote desktop solution">
       <HomepageHeader />

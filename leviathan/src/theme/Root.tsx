@@ -57,7 +57,7 @@ function DocusaurusColorModeSync(): null {
   return null;
 }
 
-export default function Root({ children }: { children: React.ReactNode }): JSX.Element {
+export default function Root({ children }: { children: React.ReactNode }): React.JSX.Element {
   return (
     <ThemeProvider theme={theme} defaultMode="system" colorSchemeNode={colorSchemeNode}>
       <DocusaurusColorModeSync />

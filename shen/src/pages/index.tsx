@@ -50,7 +50,7 @@ function HomepageHeader() {
       className="heroGradient relative overflow-hidden px-4 py-16 text-center text-white md:py-24"
     >
       <Container maxWidth="md">
-        <Typography variant="h2" component="h1" fontWeight={800} color="inherit" gutterBottom>
+        <Typography variant="h2" component="h1" color="inherit" gutterBottom sx={{ fontWeight: 800 }}>
           {siteConfig.title}
         </Typography>
         <Typography variant="h5" component="p" color="inherit" sx={{ opacity: 0.9 }}>
@@ -60,7 +60,7 @@ function HomepageHeader() {
           className="mt-8"
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
-          justifyContent="center"
+          sx={{ justifyContent: 'center' }}
         >
           <Button
             component={Link}
@@ -93,7 +93,7 @@ function FeatureCard({ title, description, icon }: Feature) {
     <Card variant="outlined" className="h-full" sx={{ borderRadius: 3 }}>
       <CardContent>
         <div className="mb-3">{icon}</div>
-        <Typography variant="h6" component="h3" fontWeight={700} gutterBottom>
+        <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 700 }}>
           {title}
         </Typography>
         <Typography color="text.secondary">{description}</Typography>
@@ -102,7 +102,7 @@ function FeatureCard({ title, description, icon }: Feature) {
   );
 }
 
-export default function Home(): JSX.Element {
+export default function Home(): React.JSX.Element {
   return (
     <Layout description="The Aethersea desktop client">
       <HomepageHeader />
