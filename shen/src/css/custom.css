@@ -31,3 +31,10 @@
   --ifm-color-primary-lightest: #9adcfc;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* Homepage hero gradient — rendered from static Infima vars (not MUI runtime
+   CSS variables) so it paints before hydration and follows light/dark on its
+   own, avoiding a flash on the most prominent element. */
+.heroGradient {
+  background: linear-gradient(135deg, var(--ifm-color-primary), var(--ifm-color-primary-darkest));
+}

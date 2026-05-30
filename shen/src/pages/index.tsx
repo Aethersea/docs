@@ -47,19 +47,13 @@ function HomepageHeader() {
   return (
     <Box
       component="header"
-      className="relative overflow-hidden text-center"
-      sx={{
-        py: { xs: 8, md: 12 },
-        background:
-          'linear-gradient(135deg, var(--mui-palette-primary-main), var(--mui-palette-primary-dark))',
-        color: 'common.white',
-      }}
+      className="heroGradient relative overflow-hidden px-4 py-16 text-center text-white md:py-24"
     >
       <Container maxWidth="md">
-        <Typography variant="h2" component="h1" fontWeight={800} gutterBottom>
+        <Typography variant="h2" component="h1" fontWeight={800} color="inherit" gutterBottom>
           {siteConfig.title}
         </Typography>
-        <Typography variant="h5" component="p" sx={{ opacity: 0.9 }}>
+        <Typography variant="h5" component="p" color="inherit" sx={{ opacity: 0.9 }}>
           {siteConfig.tagline}
         </Typography>
         <Stack
