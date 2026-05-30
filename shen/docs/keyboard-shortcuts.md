@@ -13,7 +13,7 @@ These combinations are intercepted by Shen and never reach the host.
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+Shift+Alt+Q` | Show or hide the in-session overlay (server info, disconnect, settings). Modifier keys are released on the host when the overlay opens. |
-| `Ctrl+Shift+Alt+I` | Toggle **immersive mode** (global keyboard/mouse hooks). The toast `Immersive mode ON/OFF` briefly appears. |
+| `Ctrl+Shift+Alt+I` | Toggle **immersive mode** (global keyboard/mouse hooks). The toast `Immersive mode ON/OFF` briefly appears. _No effect on Linux, where immersive mode is unsupported._ |
 | `Ctrl+Shift+Alt+K` | **Emergency stuck-keys clear.** Immediately sends `key up` for every key Shen believes is pressed. Use this if a modifier key gets stuck on the host after Alt-Tabbing out during a session. |
 | `Escape` | When the overlay is visible, dismiss it. |
 
@@ -34,6 +34,8 @@ Without immersive mode enabled, the following are **consumed by the client OS** 
 - **All platforms**: `Alt+F4`, screenshot keys, screen lock keys
 
 With **immersive mode** enabled, the native layer installs global keyboard and mouse hooks so these shortcuts are captured and forwarded to the host. Immersive mode only activates while a stream is actively receiving media — it will not engage during the `connecting` or `reconnecting` phases, nor while the overlay is visible, nor while the Shen window is unfocused. The current capture state is indicated by a small indicator in the overlay.
+
+> **Linux:** immersive mode is **not available** — the native Wayland path cannot grab input from a foreign surface (issue #14). The toggle is hidden and the mode is forced off. Use **Keyboard Lock** (active in fullscreen) to capture system shortcuts on Linux.
 
 ## macOS Accessibility Permission
 

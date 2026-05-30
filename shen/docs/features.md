@@ -54,6 +54,7 @@ Immersive mode installs **global** keyboard and mouse hooks so system shortcuts 
 - Automatically suspended while the overlay is open, while the Shen window is unfocused, and during screen lock / system sleep.
 - Only activates while the stream is actively receiving media — it will not engage during the `connecting` or `reconnecting` phases.
 - On **macOS**, the global hooks require **Accessibility** permission. If any saved server config has `immersive_mode = true`, Shen proactively requests the permission at startup so the check never blocks the first session.
+- **Not available on Linux.** The native Wayland path cannot grab input from a foreign surface (issue #14), so immersive mode is unsupported there: the Stream Settings toggle is hidden and `immersive_mode` is forced off when a config loads, regardless of what is stored. Use **Keyboard Lock** (active in fullscreen) for system-shortcut capture on Linux instead.
 
 ## Performance Overlay
 

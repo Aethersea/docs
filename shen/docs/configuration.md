@@ -53,7 +53,7 @@ The `use_custom_resolution` and `use_host_resolution` flags record which preset 
 | Key | Type | Description |
 |-----|------|-------------|
 | `window_mode` | `"fullscreen" \| "borderless" \| "windowed"` | Window mode during streaming. Default: `fullscreen`. |
-| `immersive_mode` | `boolean` | Enable global keyboard and mouse hooks so system shortcuts (`Alt+Tab`, `Cmd+Tab`, Win/Cmd key, `Ctrl+Esc`, etc.) are forwarded to the host instead of being consumed locally. Requires Accessibility permission on macOS. |
+| `immersive_mode` | `boolean` | Enable global keyboard and mouse hooks so system shortcuts (`Alt+Tab`, `Cmd+Tab`, Win/Cmd key, `Ctrl+Esc`, etc.) are forwarded to the host instead of being consumed locally. Requires Accessibility permission on macOS. **Ignored on Linux** (unsupported — forced off on load; see Features → Immersive Mode). |
 | `remote_desktop_mode` | `boolean` | Use absolute mouse positioning with the local cursor visible. The cursor position is sent to the host so it can render a blended cursor overlay. Intended for desktop productivity; defaults to `false` (relative mouse for gaming). |
 
 ### Network Measurement

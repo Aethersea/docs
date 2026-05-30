@@ -24,6 +24,9 @@ const config: Config = {
     locales: ['en'],
   },
 
+  // Local plugin that injects the Tailwind CSS v4 PostCSS compiler.
+  plugins: ['./src/plugins/tailwind.js'],
+
   presets: [
     [
       'classic',
