@@ -36,6 +36,8 @@ Leviathan supports two pairing methods, both backed by the same server-wide cred
 
 As an alternative to the password, the operator can enroll a TOTP shared secret (RFC 6238: 6 digits, SHA-1, 30-second period) via the management service (`ManagementService.EnrollTOTP`), then scan the returned `otpauth://` URI into an authenticator app.
 
+For out-of-band setup before any client has paired, the server CLI exposes `leviathan totp enroll`, which generates a fresh secret and prints the `otpauth://` URI as a scannable half-block QR code directly in the terminal (with the URI and base32 secret shown underneath for manual entry). `leviathan totp status` and `leviathan totp disable` report and clear the enrollment.
+
 When pairing with TOTP, the client sends **only the current 6-digit code** — no username. The server holds a single credential set, so possession of a valid code proves possession of the shared secret; a username adds nothing and is not required (or checked) for this method. Shen's desktop, iOS, and Android clients therefore hide the username field when the TOTP method is selected.
 
 Validation accepts ±1 period of clock skew, so a code generated near a 30-second boundary still verifies on either side. A successful TOTP pair records the client's DTLS fingerprint exactly like the password path. Rotating the password preserves the enrolled TOTP secret; call `ManagementService.DisableTOTP` to clear it.
