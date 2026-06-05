@@ -31,6 +31,18 @@ On Windows, Leviathan uses the **DXGI Desktop Duplication API** to capture frame
 - Automatic DXGI output re-enumeration on desktop switches (UAC prompts, lock screen, RDP disconnect) to prevent stale capture handles
 - HDR-safe via `IDXGIOutput5::DuplicateOutput1` when the desktop is in `R16G16B16A16_FLOAT` mode — the DWM tonemaps to `BGRA8` so the rest of the pipeline stays in SDR. There is **no HDR10 passthrough** today; everything is encoded as SDR.
 
+### Frame pacing & asynchronous sources
+
+The Windows capture loop paces itself with a **high-resolution timer**, the same way Sunshine does — it sleeps to the next target-frame-interval boundary and then polls `AcquireNextFrame` (a `0 ms` timeout once pacing is established; ~`100 ms` to prime the first frame and after any recovery). It does **not** pace against the display's vertical blank.
+
+This is a deliberate change from the earlier VBlank-aligned design (`IDXGIOutput::WaitForVBlank` → short `AcquireNextFrame`), which collapsed the captured rate for a game presenting **asynchronously** (uncapped, or with in-game V-Sync off) on a high-refresh host. While a foreground flip-model game owns the scanout, `WaitForVBlank`'s effective tick rate is throttled, so the loop sampled far fewer frames than the game produced — e.g. an 80 fps game on a 144 Hz host streamed at only ~30 fps, while the *same* game capped to the refresh rate (which re-phase-locks it to the VBlank cadence) streamed correctly. Widening the per-acquire timeout recovered it only partway (~40–60 fps); the residue was the VBlank pacing itself. Timer pacing removes the dependency on `WaitForVBlank` entirely and restored the full rate.
+
+The VBlank waiter thread and all the V-Sync / SAS-suspend recovery branches still exist in the source but are gated behind a now-always-`0` `use_vsync` flag (the waiter thread is never even created). Reverting that single initializer restores the old VBlank-paced behavior.
+
+One inherent cost of timer-pacing with a `0 ms` poll: when the captured source runs **below** the target rate (e.g. an 80 fps game with a 120 fps target), the timer wakes more often than the source produces frames, so a fraction of polls find nothing and briefly busy-spin until the next present (bounded by one inter-present gap, here ~4 ms). This matches Sunshine's poll-after-sleep design and was already the behavior whenever the target exceeded the refresh rate.
+
+If a borderless-fullscreen game *still* streams at a reduced rate after this, the remaining suspect is Windows **independent flip / Multiplane Overlay (MPO)**: the game's swap chain is handed straight to the scanout plane, so Desktop Duplication only receives a throttled recomposited copy from the DWM. That is outside the capture loop's control — mitigations are host-side (disable *fullscreen optimizations* for the game executable, or disable MPO).
+
 ## macOS — ScreenCaptureKit
 
 On macOS 12.3+, Leviathan uses **ScreenCaptureKit** for low-latency screen capture.
