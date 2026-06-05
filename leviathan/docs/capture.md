@@ -56,3 +56,10 @@ The actual frame rate is also bounded by the display's refresh rate. On ProMotio
 ## Cursor Handling
 
 Cursor images are captured at the desktop's native resolution and scaled to match the stream resolution. The cursor cache is automatically invalidated when the resolution ratio changes (e.g. when the encoder adjusts resolution), ensuring correct cursor sizing at all times.
+
+There are two cursor rendering paths, and they are sized to agree:
+
+- **Overlay path** (Windows default / Local Cursor mode): the cursor is captured via `GetIconInfo` + `DrawIconEx`, encoded as a lossless WebP, sent over the overlay DataChannel, and drawn by the client as an `<img>` on top of the video.
+- **GPU-composite path** (pointer-lock / relative mode): the cursor is taken from DXGI Desktop Duplication's `GetFramePointerShape` and composited straight into the video frame by a D3D11 compute shader.
+
+The overlay path renders each cursor at its **native bitmap size** (multiplied by the client's device-pixel-ratio oversample for Retina sharpness), *not* forced to the system cursor metric (`SM_CXCURSOR`). Under the per-monitor-DPI-aware (PMAv2) thread context the host already holds, `GetIconInfo` reports the same dimensions DXGI's `GetFramePointerShape` does — so a standard cursor is 48×48 at 150% scaling and an application that sets a genuinely large custom cursor (e.g. **Final Fantasy XIV**'s hardware cursor) keeps its true size. This makes the overlay cursor and the GPU-composited cursor render at identical on-screen sizes instead of the overlay squashing large cursors down to the system metric. The oversample factor only affects bitmap resolution; the pipeline strips it back out before reporting CSS dimensions to the client, which sizes the cursor as `reportedWidth × videoScale`.
