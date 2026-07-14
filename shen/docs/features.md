@@ -46,6 +46,8 @@ When enabled, Shen uses absolute mouse positioning with the local cursor visible
 
 During streaming in relative mouse mode, Shen automatically re-acquires pointer lock whenever the overlay is dismissed, preventing the local cursor from appearing during gameplay.
 
+Re-acquisition is a persistent retry loop rather than a single attempt. Chromium blocks pointer-lock requests for 1.25 s after the user exits the lock with `Esc` (the block is waived in fullscreen), so after an `Esc` press in windowed mode the cursor is briefly released and then locked again automatically — typically within about 1.5 s, or instantly in fullscreen. If a lock attempt keeps failing, Shen retries every 300 ms for up to 6 s per trigger; the next click always re-arms it.
+
 ## Immersive Mode
 
 Immersive mode installs **global** keyboard and mouse hooks so system shortcuts (`Alt+Tab`, the Windows / Command key, `Cmd+Space`, `Ctrl+Esc`, and so on) are captured by Shen and forwarded to the host instead of being consumed by the client OS.
