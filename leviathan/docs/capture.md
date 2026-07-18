@@ -50,7 +50,7 @@ If a borderless-fullscreen game *still* streams at a reduced rate after this, th
 
 On macOS 12.3+, Leviathan uses **ScreenCaptureKit** for low-latency screen capture.
 
-- Requires Screen Recording permission in System Settings → Privacy & Security
+- Requires Screen Recording permission in System Settings → Privacy & Security. Leviathan requests it at startup and refuses new sessions while it is missing (`SESSION_ERROR_CODE_PERMISSION_DENIED`). Because macOS applies a Screen Recording grant only at process launch, leviathan watches for the grant and restarts itself (clean exit; launchd relaunches it) so the grant actually takes effect — without this, ScreenCaptureKit keeps delivering a frozen wallpaper frame to an already-running process.
 - Captures at the display's native resolution and refresh rate
 - Supports macOS displays including ProMotion (up to 120 Hz)
 - `CVPixelBuffer` reference counting keeps frame buffers valid across all CaptureHub subscribers for safe multi-session sharing

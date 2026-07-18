@@ -42,12 +42,15 @@ leviathan.exe service uninstall
    sudo mv leviathan /usr/local/bin/
    ```
 
-3. Grant **Screen Recording** permission: System Settings → Privacy & Security → Screen Recording → add `leviathan`.
-4. Start the server in the foreground for a smoke test:
+3. Start the server in the foreground for a smoke test:
 
    ```bash
    leviathan
    ```
+
+4. Grant the permissions leviathan prompts for at startup: **Screen Recording** and **Accessibility** (System Settings → Privacy & Security). Leviathan detects the grant automatically:
+   - **Accessibility** takes effect immediately.
+   - **Screen Recording** only takes effect at process launch, so leviathan exits cleanly once the grant lands — under launchd it relaunches automatically; in a terminal, start it again. Until every permission is granted, incoming sessions are refused with a structured error the client can display (rather than streaming a frozen frame).
 
 **Run as a launchd LaunchAgent (recommended)**
 
