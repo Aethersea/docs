@@ -10,7 +10,7 @@ Leviathan is configured via a single TOML file. On first run, a default file is 
 
 | Platform | Path |
 |----------|------|
-| Windows | `%APPDATA%\leviathan\config.toml` |
+| Windows | `%ProgramData%\leviathan\config.toml` (machine-wide — readable by the service supervisor before any user logs in; legacy `%APPDATA%` configs are migrated forward automatically) |
 | macOS | `~/Library/Application Support/leviathan/config.toml` |
 | Linux | `$XDG_CONFIG_HOME/leviathan/config.toml` (falls back to `~/.config/leviathan/config.toml`) |
 
@@ -56,6 +56,9 @@ enable_touch = true
 
 [clipboard]
 disabled = false                  # true disables clipboard sync entirely
+
+[session]
+reattach_console = true           # Reattach an off-console (RDP) user session to the physical console at stream start (Windows)
 ```
 
 ## Sections
@@ -126,6 +129,12 @@ Toggle whether each input class is honored by the server's virtual input layer. 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `disabled` | `false` | Set to `true` to disable bidirectional clipboard sync entirely. On macOS this also skips launching `clipboard-helper`. |
+
+### `[session]` (Windows only)
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `reattach_console` | `true` | When a streaming client connects while the machine's user session is parked off-console (typically on RDP) and the physical console sits at a userless lock screen, the service reattaches that session to the console (`tscon <sid> /dest:console`) and restarts the capture process into it. Without this, capture can only see the console's black lock screen. **Any active RDP connection to that session is disconnected by design** — the connecting streaming client is assumed to be the machine's owner. On multi-user machines the reattach is skipped when the target session would be ambiguous (several user sessions off-console, none or more than one of them active). Read once at service start: changing it requires a service restart (`leviathan service restart`). |
 
 ## Validation
 
