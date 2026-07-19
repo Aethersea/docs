@@ -26,6 +26,29 @@ encoder = "auto"
 default_codec = "hevc"
 ```
 
+> **`auto` follows the desktop's GPU, not the fastest GPU.** Auto-detection reads the vendor of the D3D11 device that *capture* is running on — the adapter driving the desktop. On a hybrid-GPU laptop whose desktop is rendered by the Intel iGPU, `auto` selects **QSV** even when a discrete NVIDIA GPU is present and idle. Set `encoder` explicitly to override.
+
+## GPU Texture Sharing and the Keyed Mutex
+
+On Windows the capture texture pool is allocated with cross-device sharing (`SHARED_NTHANDLE | SHARED_KEYEDMUTEX`) for every hardware encoder path, so the encoder can consume frames without a CPU round trip. Access to those textures is governed by a two-key handshake:
+
+| Step | Actor | Call |
+|------|-------|------|
+| 1 | Capture | `AcquireSync(key 0)` — take write ownership |
+| 2 | Capture | write the frame, then `ReleaseSync(key 1)` — publish |
+| 3 | Encoder | `AcquireSync(key 1)` — take read ownership |
+| 4 | Encoder | copy the frame, then `ReleaseSync(key 0)` — hand the slot back |
+
+All three hardware backends implement steps 3–4 (NVENC natively; QSV and AMF via the shared helpers in `cgo/windows/keyed_mutex.h`). The software encoder reads on the CPU and keeps the classic unshared pool.
+
+**Diagnosing a broken consumer:** the capture phase summary logs a `key_recovered` counter:
+
+```
+[Capture] phases (5s, 292 iters): ... pool_drops=0; key_recovered=39 key_busy=0
+```
+
+A steadily climbing `key_recovered` means a consumer copied frames without completing the handshake, so capture had to reclaim slots stranded on key 1 every frame. The stream then shows **black or stale frames** even though capture and the encoder both report healthy frame rates. On a healthy host this counter stays at or near zero. (`key_busy` counts ordinary contention and a small non-zero value is normal under load.)
+
 ## Supported Codecs
 
 | Value | Description |
