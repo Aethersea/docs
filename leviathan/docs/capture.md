@@ -68,6 +68,18 @@ max_fps = 120
 
 The actual frame rate is also bounded by the display's refresh rate. On ProMotion or 144 Hz displays, values up to the panel rate are supported.
 
+### Advertising the host display
+
+`GetServerInfo` / `WatchServerInfo` carry the host's primary display geometry (`display_width`, `display_height`, `display_refresh_rate`) so clients with **"use host resolution"** can match the server instead of their own screen. Clients treat `display_width == 0` as *unknown* and fall back to their own display, so the server reports zeroes rather than a guess.
+
+Which display is advertised, and when:
+
+- **Primary, not first.** The advertised monitor is the one flagged `DISPLAY_DEVICE_PRIMARY_DEVICE` (Windows); DXGI's adapter/output enumeration order carries no primary guarantee. Refresh rate is queried per device name — passing `NULL` would report the primary's rate for every monitor.
+- **Never while the session is on RDP.** When an RDP client takes the host session over, every display API describes the RDP *virtual* display, sized to the remote viewer's window. Advertising it would make clients auto-configure to a resolution that disappears when RDP disconnects. The server instead reports the last geometry seen on the physical console, or nothing at all if it never saw one. Detection is `SM_REMOTESESSION` plus the `GlassSessionId` registry check, because a RemoteFX vGPU session reports itself as local.
+- **Held steady across transients.** DXGI reports zero outputs while the display sleeps, during a session switch, and right after a secure-desktop (SAS) dismiss. The last good geometry is reported through those gaps so the advertised value does not flap between real and unknown — clients rebuild their stream config whenever it changes.
+
+The 1 Hz change-detection poll behind `WatchServerInfo` is skipped entirely when no client is subscribed, so an idle server does not pay for a display enumeration every second.
+
 ## Cursor Handling
 
 Cursor images are captured at the desktop's native resolution and scaled to match the stream resolution. The cursor cache is automatically invalidated when the resolution ratio changes (e.g. when the encoder adjusts resolution), ensuring correct cursor sizing at all times.

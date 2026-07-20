@@ -79,6 +79,8 @@ Text, images, and files can be copied on one machine and pasted on the other. Se
 
 The stream resolution and frame rate are negotiated per session. You can pick a preset, enter a custom resolution, or select **Use host resolution** to match the server's primary display. The server caps the request to the bounds it exposes (`max_width`, `max_height`, `max_fps`).
 
+**Use host resolution** is resolved once, when the session starts, from the geometry the server advertises. A server that cannot describe the monitor it streams from reports *unknown* rather than a guess — most notably while its own session has been taken over by an RDP client, where the OS only describes the remote viewer's virtual display. In that case the client keeps the resolution configured in its settings instead.
+
 ## HDR
 
 HDR streaming can be requested per session when the server advertises HDR support and the client display is in HDR mode. HDR is best-effort: Leviathan today runs the internal encode path in SDR even on HDR desktops (the DWM tonemaps before capture), so the flag primarily affects the client-side decode and display path.
