@@ -1,0 +1,10 @@
+packages:
+  - main
+  - develop
+  - shen
+  - leviathan
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

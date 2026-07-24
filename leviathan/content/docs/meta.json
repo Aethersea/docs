@@ -1,0 +1,17 @@
+{
+  "title": "Leviathan Documentation",
+  "pages": [
+    "index",
+    "---Getting Started---",
+    "intro",
+    "getting-started",
+    "---Configuration---",
+    "configuration",
+    "capture",
+    "encoding",
+    "---Connectivity & Security---",
+    "pairing",
+    "networking",
+    "security"
+  ]
+}

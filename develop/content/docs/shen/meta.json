@@ -1,0 +1,6 @@
+{
+  "title": "Shen",
+  "description": "Develop the Aethersea desktop client.",
+  "root": true,
+  "pages": ["index", "fec"]
+}

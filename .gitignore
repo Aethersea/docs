@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Next.js / Fumadocs
+.next/
+.source/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Editors and OS files
+.idea/
+.vscode/
+.DS_Store
+
+# Logs
+*.log
+pnpm-debug.log*

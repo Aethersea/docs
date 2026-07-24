@@ -1,0 +1,16 @@
+{
+  "title": "Shen Documentation",
+  "pages": [
+    "index",
+    "---Getting Started---",
+    "intro",
+    "getting-started",
+    "---Features---",
+    "features",
+    "clipboard",
+    "gamepad",
+    "---Reference---",
+    "configuration",
+    "keyboard-shortcuts"
+  ]
+}

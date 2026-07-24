@@ -1,0 +1,19 @@
+{
+  "name": "aethersea-web",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.2.2",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --parallel --stream -r dev",
+    "dev:main": "pnpm --filter @aethersea/main dev",
+    "dev:develop": "pnpm --filter @aethersea/develop dev",
+    "dev:shen": "pnpm --filter @aethersea/shen-docs dev",
+    "dev:leviathan": "pnpm --filter @aethersea/leviathan-docs dev",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r types:check"
+  }
+}
