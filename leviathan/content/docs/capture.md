@@ -56,7 +56,9 @@ On macOS 12.3+, Leviathan uses **ScreenCaptureKit** for low-latency screen captu
 
 ## Resolution & Frame Rate
 
-The capture resolution and frame rate are negotiated **per session** by the client (via `SessionConfig`), bounded by the limits in `config.toml`:
+The client's requested `SessionConfig` width/height are a **budget box** (a maximum spend), never a literal output size. The encoder output is always derived host-side as a **uniform, never-upscaled fit of the live desktop into that box** — both axes share one scale factor ≤ 1.0, so the picture can never be squashed by a 16:9 vs 16:10 (or any other) aspect mismatch, and a budget larger than the desktop simply streams at the desktop's native size instead of wasting bitrate on upscaling. Axes ≤ 0 mean *host-native* on that axis; the same derivation re-runs on every mid-stream desktop mode switch, GPU adapter swap, and client `VideoBudgetUpdate` (control-channel message for mid-stream budget changes, e.g. the desktop client's follow-window mode). The client learns every derived size through `ResolutionChanged` — the host is the sole authority, and clients render aspect-preserving, so no client-side math is correctness-relevant.
+
+The derived output is additionally capped per axis by the limits in `config.toml`:
 
 ```toml
 [video]
@@ -66,6 +68,13 @@ max_fps = 120
 ```
 
 The actual frame rate is also bounded by the display's refresh rate. On ProMotion or 144 Hz displays, values up to the panel rate are supported.
+
+**Where the scaling happens** differs by platform, and so does the mid-stream mechanism:
+
+- **Windows**: Desktop Duplication always captures the full native desktop; each session's encoder scales it into that session's derived output, so **per-session budgets are fully independent**. A desktop mode switch (or GPU adapter swap) re-derives each session's output and reconfigures — or rebuilds — its encoder in place.
+- **macOS**: ScreenCaptureKit scales the display into one shared output buffer per display, whose size is applied live via `SCStream.updateConfiguration`. The hub therefore aggregates the subscribers' desired sizes (**largest area wins**) and every subscriber's encoder follows the frames that actually arrive — VideoToolbox cannot resize in place, so a size change rebuilds the encoder. With a single subscriber (the normal case) the budget is honoured exactly; with **multiple subscribers the budget degrades to best-effort**, and a mid-stream `VideoBudgetUpdate` is rejected rather than silently resizing a sibling session's stream. Every client is always told the truth via `ResolutionChanged`.
+
+Rotated (portrait) DXGI desktops are not supported: Desktop Duplication delivers rotated displays unrotated and Leviathan does not rotate the image.
 
 ### Advertising the host display
 

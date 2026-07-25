@@ -76,9 +76,15 @@ Text, images, and files can be copied on one machine and pasted on the other. Se
 
 ## Resolution & Refresh Rate
 
-The stream resolution and frame rate are negotiated per session. You can pick a preset, enter a custom resolution, or select **Use host resolution** to match the server's primary display. The server caps the request to the bounds it exposes (`max_width`, `max_height`, `max_fps`).
+The resolution you configure is a **budget box** — a maximum, never a literal output size. The host derives the actual stream as a uniform, never-upscaled fit of its live desktop into the box, so a mismatched aspect ratio (a 16:9 preset on a 16:10 host, say) can never distort the picture: the stream keeps the host's aspect and simply spends fewer pixels, and the client letterboxes as needed. The host reports every derived size back mid-stream, including desktop resolution changes.
 
-**Use host resolution** is resolved once, when the session starts, from the geometry the server advertises. A server that cannot describe the monitor it streams from reports *unknown* rather than a guess — most notably while its own session has been taken over by an RDP client, where the OS only describes the remote viewer's virtual display. In that case the client keeps the resolution configured in its settings instead.
+Resolution modes:
+
+- **Host Resolution** (default): sends a host-native budget — the host streams its live desktop size (capped by its own `max_width`/`max_height`) and follows desktop changes automatically. Works even when the host cannot describe its monitor (e.g. its session is on RDP); the host itself decides once capture starts.
+- **Follow Window Size**: the budget tracks this window's physical pixel size (CSS size × display scaling) and renegotiates after you resize the window or move it to a display with a different scale factor. An oversized window simply streams at the host's native size.
+- **Presets / Custom**: fixed budget boxes. Preset heights are derived from the host's aspect ratio when known; custom boxes accept any ratio (the surplus axis of an odd ratio is just unused).
+
+Frame rate is negotiated per session and capped by the server's `max_fps` and the display refresh rate.
 
 ## HDR
 
