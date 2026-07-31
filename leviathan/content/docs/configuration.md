@@ -37,6 +37,7 @@ encoder = "auto"                  # "auto", "nvenc", "qsv", "amf", or "software"
 max_bitrate_kbps = 50000
 min_bitrate_kbps = 1000
 cross_device = false              # Force separate D3D11 devices for capture+encoder (Windows)
+hybrid_gpu_hook = true            # Keep outputs on the GPU that drives them, on hybrid laptops (Windows)
 source = "display"                # "display" (default); "v4l2" reserved for RK3588 box
 source_device = ""                # e.g. "/dev/video0" when source = "v4l2"
 
@@ -99,6 +100,7 @@ These keys are only meaningful when `network.mode = "manual"`.
 | `max_bitrate_kbps` | `50000` | Adaptive bitrate ceiling. |
 | `min_bitrate_kbps` | `1000` | Adaptive bitrate floor. |
 | `cross_device` | `false` | Force the encoder to allocate its own D3D11 device instead of sharing the capture device (Windows). The pipeline auto-promotes to cross-device when more than one session subscribes to the same display, so this flag is rarely needed manually. |
+| `hybrid_gpu_hook` | `true` | Windows only. On a laptop with both an integrated and a discrete GPU, DXGI resolves a GPU preference for the process and then *reparents* display outputs onto the resolved GPU — which routinely drags capture onto the integrated GPU, and with it the encoder, since the encoder is created on the capture device. This suppresses that resolution so outputs stay on the adapter that actually drives them. Set `false` to restore the OS behaviour without rebuilding. No effect on single-GPU machines or off Windows. |
 | `source` | `"display"` | Video input backend. Only `"display"` is wired up today; `"v4l2"` is reserved for the RK3588 streaming box backend. |
 | `source_device` | `""` | Device identifier when `source` is not `"display"` (e.g. `/dev/video0`). |
 
