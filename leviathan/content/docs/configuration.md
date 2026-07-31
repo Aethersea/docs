@@ -98,7 +98,7 @@ These keys are only meaningful when `network.mode = "manual"`.
 | `encoder` | `"auto"` | Encoder backend. See [Encoding](./encoding) for the per-platform mapping. |
 | `max_bitrate_kbps` | `50000` | Adaptive bitrate ceiling. |
 | `min_bitrate_kbps` | `1000` | Adaptive bitrate floor. |
-| `cross_device` | `false` | Force the encoder to allocate its own D3D11 device instead of sharing the capture device (Windows). The pipeline auto-promotes to cross-device in two cases, so this flag is rarely needed manually: when more than one session subscribes to the same display, and when capture lands on an integrated GPU while a faster discrete NVENC/AMF encoder is present and the output is larger than 1080p. Setting `encoder` to anything other than `"auto"` disables the second promotion — an explicit backend choice is never overridden. |
+| `cross_device` | `false` | Force the encoder to allocate its own D3D11 device instead of sharing the capture device (Windows). The pipeline auto-promotes to cross-device when more than one session subscribes to the same display, so this flag is rarely needed manually. |
 | `source` | `"display"` | Video input backend. Only `"display"` is wired up today; `"v4l2"` is reserved for the RK3588 streaming box backend. |
 | `source_device` | `""` | Device identifier when `source` is not `"display"` (e.g. `/dev/video0`). |
 
