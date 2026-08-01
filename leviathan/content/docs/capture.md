@@ -17,9 +17,11 @@ When DXGI Desktop Duplication recovers from `DXGI_ERROR_ACCESS_LOST` (e.g. resol
 
 ### Multi-subscriber encoder isolation (Windows)
 
-When a second session subscribes to a hub that already has an active subscriber, the new session's pipeline is automatically promoted to **cross-device encoder mode** — its NVENC/MFT encoder allocates its own D3D11 device instead of reusing the capture's shared device. This is critical because the D3D11 Video Processor used for BGRA→NV12 conversion serializes work on the immediate context: two encoders sharing one device would cause per-frame VP times to spike from `<1ms` to `30–90ms`, dropping frames on the existing client and triggering a recovery loop. Cross-device costs one cross-adapter texture copy per frame but eliminates the contention.
+When a second session subscribes to a hub that already has an active subscriber, the new session's pipeline gives its encoder **its own D3D11 device** instead of reusing the capture's shared device. This is critical because the D3D11 Video Processor used for BGRA→NV12 conversion serializes work on the immediate context: two encoders sharing one device would cause per-frame VP times to spike from `<1ms` to `30–90ms`, dropping frames on the existing client and triggering a recovery loop. The second device costs one texture copy per frame but eliminates the contention.
 
-The first subscriber may also be promoted to cross-device retroactively if both sessions race to subscribe.
+That second device is always created on the **same adapter as capture**. Encoding from a different GPU is refused outright — the CPU bridge it would need does not honour the capture pool's keyed mutex and encodes black frames (issue #44). If no encoder can be placed on the capture adapter, the pipeline falls back to sharing the capture device and accepts the contention.
+
+The first subscriber may also be given its own device retroactively if both sessions race to subscribe.
 
 ## Windows — DXGI Desktop Duplication
 
