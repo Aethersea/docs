@@ -42,7 +42,7 @@ gRPC (TLS) Session stream
    - Injects encoded tracks into the WebRTC media connection.
 4. The control DataChannel handles input events, clipboard sync, cursor overlays, and file transfers.
 5. The telemetry DataChannel sends periodic heartbeats with RTT measurements derived from RTCP Receiver Reports.
-6. If the client did not set `AudioConfig.play_on_host`, the `internal/hostaudio` package mutes the host's default render endpoint for the duration of the session (Sunshine-compatible behaviour). A refcount ensures the host is unmuted only after the last "mute-requesting" session ends, and the endpoint's original mute state is restored rather than unconditionally cleared.
+6. If the client did not set `AudioConfig.play_on_host`, the `internal/hostaudio` package mutes the host's default render endpoint for the duration of the session. A refcount ensures the host is unmuted only after the last "mute-requesting" session ends, and the endpoint's original mute state is restored rather than unconditionally cleared.
 
 ## Platform Support Matrix
 

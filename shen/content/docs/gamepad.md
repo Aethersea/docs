@@ -29,7 +29,7 @@ Shen forwards up to **16 simultaneous controllers** to the host. Every platform 
 | Combination | Action |
 |-------------|--------|
 | Long-press **Start** (≥ 750 ms) | Enter/exit on-controller mouse emulation mode |
-| **Start + Select + LB + RB** | Quit the current session (mirrors the Moonlight/Sunshine convention) |
+| **Start + Select + LB + RB** | Quit the current session (the conventional game-streaming chord) |
 
 ## Enabling Gamepad Input
 
