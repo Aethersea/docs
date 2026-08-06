@@ -58,6 +58,18 @@ disabled = false                  # true disables clipboard sync entirely
 
 [session]
 reattach_console = true           # Reattach an off-console (RDP) user session to the physical console at stream start (Windows)
+
+[telemetry]
+enabled = false                   # Off by default; nothing is exported and instrumentation is a no-op
+endpoint = ""                     # OTLP/HTTP base URL, e.g. "https://signoz.example.net"
+ingestion_key = ""                # Only for collectors that require one (SigNoz Cloud)
+ingestion_key_header = ""         # Defaults to "signoz-ingestion-key"
+insecure = false                  # Allow a plain http:// endpoint
+service_name = ""                 # Defaults to "leviathan"
+environment = ""                  # Fills deployment.environment, e.g. "lab"
+metric_interval_secs = 15         # Metric export period
+logs = true                       # Mirror the process log to the collector
+traces = true                     # Export session start-up spans
 ```
 
 ## Sections
@@ -134,6 +146,48 @@ Toggle whether each input class is honored by the server's virtual input layer. 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `reattach_console` | `true` | When a streaming client connects while the machine's user session is parked off-console (typically on RDP) and the physical console sits at a userless lock screen, the service reattaches that session to the console (`tscon <sid> /dest:console`) and restarts the capture process into it. Without this, capture can only see the console's black lock screen. **Any active RDP connection to that session is disconnected by design** — the connecting streaming client is assumed to be the machine's owner. On multi-user machines the reattach is skipped when the target session would be ambiguous (several user sessions off-console, none or more than one of them active). Read once at service start: changing it requires a service restart (`leviathan service restart`). |
+
+### `[telemetry]`
+
+Exports OpenTelemetry metrics, logs and traces to an OTLP collector (SigNoz).
+Disabled by default — a host that is not pointed at a collector spends nothing
+on instrumentation.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `false` | Master switch. While `false`, every recording call is a no-op and no exporter is constructed. |
+| `endpoint` | *(empty)* | OTLP/**HTTP** base URL, e.g. `https://signoz.example.net`. The `/v1/metrics`, `/v1/logs` and `/v1/traces` paths are appended automatically. A bare `host:port` is accepted and gets a scheme from `insecure`. OTLP/gRPC is not supported: a collector published through a reverse proxy or CDN commonly terminates HTTP/1.1 only. |
+| `ingestion_key` | *(empty)* | Sent as an auth header. Leave empty for an unauthenticated self-hosted collector. |
+| `ingestion_key_header` | `signoz-ingestion-key` | Header name `ingestion_key` is sent under. |
+| `insecure` | `false` | Permit a plain `http://` endpoint. Ignored when `endpoint` already carries a scheme. |
+| `service_name` | `leviathan` | Reported `service.name`. |
+| `environment` | *(empty)* | Reported `deployment.environment`. Omitted when empty. |
+| `metric_interval_secs` | `15` | Metric export period. Kept short deliberately: drop bursts and FEC oscillation are invisible at a minute's resolution. |
+| `logs` | `true` | Mirror the process log to the collector as OTLP log records. The local log file/stderr is never replaced — this only adds a second sink. Severity is inferred from the message text. |
+| `traces` | `true` | Export session start-up spans (`pipeline.start` → `encoder.init`, `capture.subscribe`). Per-frame work is deliberately not traced; it is covered by metrics instead. |
+
+**Exported metrics.** All are labelled with `session.id`, `video.codec`,
+`video.resolution`, `video.fps` and `capture.platform`.
+
+| Metric | Type | What it answers |
+|--------|------|-----------------|
+| `leviathan.capture.frame_interval` | histogram (ms) | Is delivery smooth? Buckets straddle the 16.7 ms 60fps budget. |
+| `leviathan.capture.frames` | counter | Frames the capture backend delivered. |
+| `leviathan.encode.latency` | histogram (ms) | Submit → encoded packet. macOS only; the Windows path has no submit-time map to difference against. |
+| `leviathan.encode.queue_depth` | gauge | Frames in flight inside the encoder. |
+| `leviathan.encode.frames` / `.bytes` | counter | Real delivered bitrate, as opposed to the configured one. |
+| `leviathan.encode.keyframes` | counter | Keyframes actually emitted. Kept separate from `keyframe.requests` so "who asked for an IDR" stays answerable. |
+| `leviathan.frames.dropped` | counter, by `drop.reason` | `encoder_backlog`, `encode_queue_full`, `encoder_ratecontrol`, `rtp_queue_full` — which stage is losing frames. |
+| `leviathan.rtcp.loss` / `.rtt` / `.jitter` | gauge / histogram / gauge | What the client reports receiving. |
+| `leviathan.fec.ratio` | gauge | The adaptive FEC level, recorded every cycle so a sawtooth is visible as a sawtooth. |
+| `leviathan.keyframe.requests` | counter, by `keyframe.source` | Whether IDRs are client-driven or encoder-drop-driven. |
+| `leviathan.sessions.active` | up/down counter | Concurrent sessions. |
+
+`drop.reason = encoder_ratecontrol` is worth watching on its own: it means the
+hardware encoder refused a frame because it could not meet the bitrate target.
+On the VideoToolbox path that also poisons the following P-frame and forces an
+IDR, so a rising count there is the signature of a bitrate set too low for the
+resolution.
 
 ## Validation
 
