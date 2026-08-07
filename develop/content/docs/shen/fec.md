@@ -23,7 +23,7 @@ Byte 4-5:   baseSequenceNumber(u16 BE, first RTP sequence number of this FEC blo
 ```
 
 - **Extension URI**: `urn:leviathan:fec` (RFC 8285 one-byte format, ID range 1-14)
-- **Extension ID**: dynamically obtained from the SDP `a=extmap:N urn:leviathan:fec` line. The server uses 9 by default, but all three clients (desktop, Android, iOS) parse the negotiated ID from the server's SDP offer instead of hardcoding it. A fallback scan over all 6-byte extensions is retained as a safety net
+- **Extension ID**: negotiated via SDP (`a=extmap:N urn:leviathan:fec`). pion assigns extension IDs itself during registration — TWCC usually claims 1, so FEC typically lands on **2**. The server resolves the negotiated ID from its video sender's parameters and writes *that* ID into packets (`DefaultFecExtensionID = 9` remains only as a fallback when resolution fails). All three clients (desktop, Android, iOS) parse the negotiated ID from the server's SDP offer; a fallback scan over all 6-byte extensions is retained as a safety net
 
 ## RS Parameter Calculation
 
@@ -31,10 +31,12 @@ Reed-Solomon parameters for each FEC block:
 
 | Parameter | Calculation |
 |-----------|-------------|
-| `data_shards` | `dataShardCount` (number of RTP data packets for the frame) |
+| `data_shards` | `dataShardCount` (number of RTP data packets for the frame), **minimum 1** — single-packet frames (common for static-scene P-frames) are protected too (RS(1, 2)) |
 | `parity_shards` | `max(2, ceil(dataShardCount × fecPercentage / 100))`, minimum 2 parity shards |
 | `shard_size` | Maximum payload length among all data packets in the block (shorter packets are zero-padded) |
 | Total shard limit | `data_shards + parity_shards ≤ 256` (GF(2^8) constraint) |
+
+These derivation rules are mirrored on both sides of the wire: the client computes `parity_shards` from the header-extension fields alone, so the formula (including the minimum of 2 and the 256-shard cap) must never change unilaterally.
 
 ## Shard Length Prefix
 
@@ -91,6 +93,11 @@ struct FecBlockKey {
 5. Encode to generate parity shards
 6. Wrap parity shards as RTP packets with FEC header extension (`isParity = true`) and send
 
+The whole send path (leviathan `internal/streaming/fec_send.go`) is shared across platforms (Windows/macOS) and codecs (H.265/AV1). Two invariants it maintains:
+
+- **Extension present ⇒ parity was sent.** If parity generation fails for a block, its data packets are still sent — *without* the FEC extension — so clients treat them as plain data instead of arming an FEC block whose parity never arrives. (Previously a parity failure silently dropped the block's data packets entirely.)
+- A `WriteRTP` failure aborts the rest of the frame send on every platform (the track is dead; pushing more packets is pointless).
+
 ## Decoding (Client-Side)
 
 ### Fast Path
@@ -105,9 +112,17 @@ All data packets received → skip RS decoding, strip length prefixes and return
 4. Strip the 2-byte length prefix from each reconstructed data shard to recover original payloads
 5. Return all data packets in sequence number order
 
+A recovered packet may carry the RTP marker bit **only when it is the last shard of the frame's last FEC block** (largest `base_sequence`, wrap-aware). On the wire only the frame's final data packet has the marker; fabricating one on inner blocks would mask a truly lost frame tail from the frame-completeness check.
+
+### Flush Gating (Desktop)
+
+The desktop receiver's frame assembly (`shen/native/src/leviathan/frame_assembler.rs`) applies one unified rule: *a frame whose marker has been observed is flushed iff every one of its FEC blocks is complete or recoverable*, and the gate is re-evaluated after **every** insert into that frame — data or parity.
+
+This matters because the server always sends a block's parity *after* its data (the marker rides the last data packet). At marker time the parity is necessarily still in flight; flushing immediately would run recovery with zero parity shards, declare the frame corrupt, and request an IDR — the "IDR storm" failure mode. Under the gate the frame is held until parity (or reordered late data) makes it recoverable.
+
 ### Timeout Cleanup
 
-FEC blocks that cannot be recovered are discarded after **150ms** to prevent unbounded memory growth. Discarding a block triggers an IDR keyframe request.
+FEC blocks that cannot be recovered are discarded after **150ms** (the jitter-buffer timeout, which also backstops the flush gate above) to prevent unbounded memory growth. Discarding an unrecoverable block marks the frame corrupt and triggers an IDR keyframe request.
 
 ## Multi-Block FEC
 
@@ -128,11 +143,13 @@ Large frames may be split into **multiple independent FEC blocks**, each with it
 - **Language**: Rust
 - **RS library**: `reed-solomon-erasure` crate v6.0 (SIMD-accelerated)
 - **Integration**: Processed directly in the video packet handling loop, not as a WebRTC Interceptor
-- **Core file**: `shen/native/src/leviathan/fec.rs`
-- **Integration point**: `shen/native/src/leviathan/media.rs`
-- Data packets are always received and forwarded to the depacketizer
-- Parity packets are stored in the `current_fec_blocks` HashMap
-- `attempt_fec_recovery()` is called when a frame is flushed
+- **Core files**:
+  - `shen/native/src/leviathan/fec.rs` — FecInfo / FecBlock / RS recovery
+  - `shen/native/src/leviathan/frame_assembler.rs` — frame assembly state machine: per-frame buffering, one-frame lookback, FEC block routing, stale rejection and the unified flush gate (pure logic, unit-tested; shared by the H.265 and AV1 reader loops)
+- **Integration point**: `shen/native/src/leviathan/media.rs` (both reader loops drive a `FrameAssembler`; depacketization and frame finalization stay codec-specific)
+- Data packets are forwarded to the depacketizer and simultaneously inserted into the frame's FEC blocks
+- Parity packets are routed to FEC blocks only (never reach the depacketizer)
+- `attempt_fec_recovery()` runs when an assembled frame is flushed
 
 ### Android (shen-android)
 
