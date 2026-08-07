@@ -27,6 +27,37 @@ default_codec = "hevc"
 
 > **`auto` follows the desktop's GPU, not the fastest GPU.** Auto-detection reads the vendor of the D3D11 device that *capture* is running on — the adapter driving the desktop. On a hybrid-GPU laptop whose desktop is rendered by the Intel iGPU, `auto` selects **QSV** even when a discrete NVIDIA GPU is present and idle. Set `encoder` explicitly to override.
 
+### VideoToolbox rate control (macOS)
+
+On macOS 26+ the encoder is configured from VideoToolbox's own **Encoder
+Settings Assistant**: the session queries
+`kVTCompressionPropertyKey_SupportedPresetDictionaries` and applies the
+`kVTCompressionPreset_VideoConferencing` preset as its base configuration,
+then overrides bitrate, GOP, profile and frame rate explicitly. Under
+low-latency rate control the platform's own recipe is `AverageBitRate` with
+**no `DataRateLimits`** — burst control is the low-latency rate controller's
+job.
+
+Leviathan previously added a hand-rolled hard cap of 120% of target over a
+100 ms window on this path. That window could not absorb the encoder's own
+forced IDR frames (a 65–98 KB IDR plus the frames sharing its 100 ms window
+overran the ~150 KB budget at 10 Mbps), so VideoToolbox dropped frames; each
+drop invalidates the following P-frame and forces another IDR, which
+degenerated into a drop/IDR feedback loop visible as heavy stutter. The cap
+is now gone whenever the conferencing preset applies; on older systems a
+backstop cap remains at the documented live-streaming values (150% of target
+over a 1-second window).
+
+If a preset ever selects variable bitrate, the session switches to
+`VariableBitRate` + `VBVMaxBitRate` (150% of target) instead of
+`AverageBitRate`, per the same samples — the two property families are
+mutually exclusive. Runtime bitrate adaptation follows whichever family the
+session was created with.
+
+> **Bitrate floor for 2880×1800@60:** the encoder's own conferencing preset
+> suggests ≈12.1 Mbps for this geometry (7.5 Mbps for 1920×1080). Client
+> budgets below that are asking the rate controller to under-deliver.
+
 ## GPU Texture Sharing and the Keyed Mutex
 
 On Windows the capture texture pool is allocated with cross-device sharing (`SHARED_NTHANDLE | SHARED_KEYEDMUTEX`) for every hardware encoder path, so the encoder can consume frames without a CPU round trip. Access to those textures is governed by a two-key handshake:
