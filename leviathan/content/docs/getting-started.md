@@ -51,6 +51,10 @@ leviathan.exe service uninstall
    - **Accessibility** takes effect immediately.
    - **Screen Recording** only takes effect at process launch, so leviathan exits cleanly once the grant lands — under launchd it relaunches automatically; in a terminal, start it again. Until every permission is granted, incoming sessions are refused with a structured error the client can display (rather than streaming a frozen frame).
 
+   While anything is still missing, leviathan also advertises it in its server info, so clients mark the machine as needing attention in their server list *before* anyone tries to connect — in Shen the card carries a **Permission needed** badge and refuses to launch.
+
+   > On macOS there is also a GUI path: opening `Leviathan.app` starts the **control panel**, not the server — you can grant permissions and restart the agent from there. See [Control Panel](./control-panel).
+
 **Run as a launchd LaunchAgent (recommended)**
 
 ```bash

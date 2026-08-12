@@ -54,3 +54,12 @@ Shen stores per-server pairing material in the **OS keyring** (Credential Manage
 - [ ] You know the host address (IP, hostname, or VPN address) and the operator's username/password.
 
 If the host sits behind NAT and you are connecting across the internet, see [Networking](https://leviathan.theaethersea.com/docs/networking) on the Leviathan side for how to set up `manual` network mode and which ports to forward.
+
+## Server Card Badges
+
+A server card carries a badge when something would stop a session before it starts, and Shen refuses to launch that host until it is resolved:
+
+- **Update required** — the host only accepts Shen builds newer than yours. Update Shen.
+- **Permission needed** — a macOS host is missing **Screen Recording** and/or **Accessibility**. Hover the badge to see which. Fix it on the *host* machine under System Settings → Privacy & Security; Leviathan relaunches itself to pick up a Screen Recording grant when it runs as a service, and the badge clears on its own within about a second of the grant landing — no refresh needed.
+
+Hosts running Windows or Linux never show the permission badge; neither does a host running a Leviathan too old to report its permission state.
