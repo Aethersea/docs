@@ -32,7 +32,7 @@ All input captured in the Shen window is forwarded to the host in real time.
 
 | Input Type | Notes |
 |-----------|-------|
-| Keyboard | Full pass-through including modifier keys. `Ctrl+Alt+Backspace` is translated to `Ctrl+Alt+Delete` on the host. |
+| Keyboard | Full pass-through including modifier keys. `Ctrl+Alt+Backspace` is translated to `Ctrl+Alt+Delete` on the host. Lock-key (Caps/Num/Scroll) state is synchronized with the host rather than injected as keystrokes. |
 | Mouse | Relative (for gaming) and absolute (remote-desktop) modes. |
 | Scroll | High-precision trackpad scroll supported. |
 | Gamepad | Up to 16 simultaneous controllers via **SDL3** (statically linked). Buttons, analog sticks, triggers, rumble (body and trigger), motion sensors, touchpad, LEDs, and battery state are all forwarded where the controller supports them. |
@@ -46,6 +46,12 @@ When enabled, Shen uses absolute mouse positioning with the local cursor visible
 During streaming in relative mouse mode, Shen automatically re-acquires pointer lock whenever the overlay is dismissed, preventing the local cursor from appearing during gameplay.
 
 Re-acquisition is a persistent retry loop rather than a single attempt. Chromium blocks pointer-lock requests for 1.25 s after the user exits the lock with `Esc` (the block is waived in fullscreen), so after an `Esc` press in windowed mode the cursor is briefly released and then locked again automatically — typically within about 1.5 s, or instantly in fullscreen. If a lock attempt keeps failing, Shen retries every 300 ms for up to 6 s per trigger; the next click always re-arms it.
+
+### Lock-Key Sync
+
+Caps/Num/Scroll Lock state is synchronized with the host. The client's lock state is authoritative — pressing a lock key while the stream is focused applies the client's resulting state to the host; the key itself is not injected as a keystroke. Host-side lock changes (someone at the machine, or a host app) are not reverted automatically and persist until the next client lock-key action. The host reports its state when the control channel opens and on every change; while the host's Caps Lock is ON, Shen shows a small **Host Caps Lock** chip in the overlay bar, and a toast ("Host Caps Lock is ON" / "Host Caps Lock is OFF") fires only when the host diverges from the client — client-side toggles never toast. Windows hosts sync all three lock keys; macOS hosts sync Caps Lock only (Num Lock and Scroll Lock do not exist on macOS).
+
+- **Known limitation** (Windows host): lock-key presses made while the host is on the secure desktop / lock screen may not be observed until control returns to the normal desktop.
 
 ## Immersive Mode
 
