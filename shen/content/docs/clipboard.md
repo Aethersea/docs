@@ -22,9 +22,10 @@ To prevent the accumulation of "orphan" processes, the macOS `clipboard-helper` 
 Shen supports multiple concurrent streaming windows, managed by a singleton clipboard controller:
 
 1.  **Singleton Helper**: Only one instance of the clipboard-helper (on macOS) or the main process listener (Windows/Linux) is active, regardless of how many windows are open.
-2.  **Transparent IPC Relay**: Clipboard events are fanned out from the main process to every active remote renderer.
-3.  **Deduplication & Routing**: When the server pushes a clipboard update back to the host, Shen uses a `content_hash` check. This ensures that the window which originated the copy does not attempt to "paste" the same data back into the host OS, preventing infinite feedback loops.
-4.  **Late-Joiner Cache**: If you copy a file or text locally and *then* open a streaming window, the new window will receive the most recent clipboard announcement immediately upon connection.
+2.  **Cross-Session Relay**: Anything you copy on your own machine reaches every open streaming session, as it always has. Text and images copied on a remote host now reach your other sessions as well, so you can copy on one remote machine and paste on another.
+3.  **No Echo-Back to Origin**: Relayed content is never sent back to the session it came from. Every other session still receives it.
+4.  **Text and Images Only**: The cross-session relay excludes files. A file copied on one remote host is shared with your local machine but will not appear on another remote session.
+5.  **Late-Joiner Cache**: If you copy a file or text locally and *then* open a streaming window, the new window will receive the most recent clipboard announcement immediately upon connection.
 
 ## Performance Optimization
 
