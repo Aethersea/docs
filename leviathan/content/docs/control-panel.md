@@ -38,6 +38,14 @@ Edits the server's `config.toml` directly — the same file documented in [Confi
 - **Save** writes the file and stops there. A running server keeps using its current settings until it is restarted.
 - **Save & Apply** writes the file and makes the running server pick it up. Most settings are consumed by the streaming child process, which is recycled in place. Changing the `[network]` section is the exception: the public port and bind address are read once when the service starts, so those changes trigger a full service restart, which can take a few seconds.
 
+#### Virtual Display (Windows only)
+
+The **Virtual Display** category edits the `[virtual_display]` section of [Configuration](./configuration) — the bundled Virtual Display Driver that lets a host stream without a physical monitor. It shows a live status badge queried from the service (**ACTIVE**, **DISABLED**, **NOT CREATED**, **DRIVER MISSING**, or **SERVICE OFFLINE** when the service is not running) with the device's instance ID and whether it is managed by Leviathan or was installed outside it, a **Refresh** button, and the settings themselves: an **Enable** checkbox, monitors, global refresh rates, resolutions (one `WxH@Hz` per line), the render GPU (a drop-down of the machine's adapter names, free text allowed), **Make it the primary display when streaming starts**, hardware cursor and driver logging.
+
+Saving this category applies immediately: the service stops the capture process, reloads the driver device, and restarts capture, while the panel shows *Applying…* and polls the status until it settles. A reconcile failure is reported in a dialog; the configuration itself is still saved.
+
+The driver package is only present when the **Virtual Display Driver** component was selected in the installer (it is unchecked by default because it adds the driver's code-signing publisher, SignPath Foundation, to the machine's Trusted Publishers). The installer runs `leviathan vdd install-driver` to stage it and the uninstaller runs `leviathan vdd uninstall`; `leviathan vdd status` shows the same state as the badge.
+
 ### Credentials & TOTP
 
 Sets the server username and password used during [pairing](./pairing), and enrolls or clears the TOTP (2FA) shared secret. This is the GUI equivalent of `leviathan set-credentials` and `leviathan totp enroll` / `totp disable`.
