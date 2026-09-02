@@ -133,7 +133,7 @@ export default function HomePage() {
 
       <footer className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-6 py-10 text-sm text-fd-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col gap-1">
-          <p>© {new Date().getFullYear()} Aethersea. Open source, end to end.</p>
+          <p>© {new Date().getFullYear()} Reall System LTD. Open source, end to end.</p>
           <p>Made with ❤️ in Palo Alto</p>
         </div>
         <Link href="https://develop.theaethersea.com" className="hover:text-fd-foreground">
