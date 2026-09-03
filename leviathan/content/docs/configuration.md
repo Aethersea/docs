@@ -56,6 +56,16 @@ enable_touch = true
 [clipboard]
 disabled = false                  # true disables clipboard sync entirely
 
+[virtual_display]
+enabled = false                   # Windows only. Create/adopt and enable the bundled virtual display; false disables a device Leviathan manages and never touches one it doesn't
+monitors = 1                      # 1-4 virtual monitors
+resolutions = "1920x1080@60, 2560x1440@60, 3840x2160@60"   # comma-separated WxH@Hz (@Hz optional)
+refresh_rates = "60"              # comma-separated global refresh rates, applied to every resolution
+gpu = ""                          # DXGI adapter name to render on; "" = the driver picks the adapter with the most VRAM
+make_primary = false              # Make the virtual monitor the primary display before capture starts
+hardware_cursor = true
+logging = false                   # Driver's own log under the settings directory
+
 [session]
 reattach_console = true           # Reattach an off-console (RDP) user session to the physical console at stream start (Windows)
 
@@ -140,6 +150,27 @@ Toggle whether each input class is honored by the server's virtual input layer. 
 | Key | Default | Description |
 |-----|---------|-------------|
 | `disabled` | `false` | Set to `true` to disable bidirectional clipboard sync entirely. On macOS this also skips launching `clipboard-helper`. |
+
+### `[virtual_display]` (Windows only)
+
+Leviathan's Windows installer can bundle the MIT-licensed [Virtual Display Driver](https://github.com/VirtualDrivers/Virtual-Display-Driver) (an IddCx driver, hardware ID `Root\MttVDD`) so a host can stream without a physical monitor. The installer only stages the driver package (it is an optional, unchecked-by-default component; see [Control Panel](./control-panel)); the device itself is created, enabled, disabled and configured from this section. The control panel's **Virtual Display** category edits the same keys.
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `enabled` | `false` | `true` creates the virtual display device (or adopts one that already exists) and enables it. `false` disables a device Leviathan manages. Leviathan never touches — and never uninstalls — a Virtual Display Driver device it did not create or adopt. |
+| `monitors` | `1` | Number of virtual monitors, 1–4. |
+| `resolutions` | `"1920x1080@60, 2560x1440@60, 3840x2160@60"` | Comma-separated `WxH@Hz` modes; `@Hz` is optional. Width 640–7680, height 480–4320, refresh 24–500 Hz. |
+| `refresh_rates` | `"60"` | Comma-separated global refresh rates the driver replicates onto every resolution. |
+| `gpu` | `""` | DXGI adapter description the driver should render on (the panel offers the machine's adapter names). Empty lets the driver pick the adapter with the most VRAM. This is only a *preference*: on laptops with an integrated and a discrete GPU, Windows may still place the virtual display on the integrated GPU, which then drives which encoder is used. |
+| `make_primary` | `false` | Move the virtual monitor to the primary position before capture starts — capture always follows the primary display. Uses the Windows display-configuration API and saves the layout to the machine display database. The previous primary is not restored on disable; Windows picks a new primary when the virtual monitor goes away. |
+| `hardware_cursor` | `true` | Let streaming software own the cursor plane. |
+| `logging` | `false` | Enable the driver's own log under the settings directory. |
+
+Lists are comma-separated strings rather than TOML arrays on purpose. Values are validated when the file is saved (also while `enabled = false`), so a typo surfaces immediately rather than when the display is switched on.
+
+**How a change is applied.** The generated driver settings file lives at `%ProgramData%\leviathan\vdd\vdd_settings.xml`; when the feature is enabled, Leviathan points the driver at that directory through the registry value `HKLM\SOFTWARE\MikeTheTech\VirtualDisplayDriver\VDDPATH`. The driver reads its settings only when the device starts, so every change disables and re-enables the device. The service does this at service start and whenever the control panel saves a changed `[virtual_display]` section: it stops the streaming capture process, reconciles the device, then relaunches capture.
+
+**Ownership.** Leviathan records under `HKLM\SOFTWARE\Leviathan\VirtualDisplay` whether it *created* the device or *adopted* an existing one (after snapshotting the previous `VDDPATH` and enable state). Disabling an adopted device that was enabled before hands it back to its previous configuration; uninstalling removes only a device Leviathan created (together with its staged driver package and publisher trust) and restores an adopted one.
 
 ### `[session]` (Windows only)
 
