@@ -37,6 +37,7 @@ encoder = "auto"                  # "auto", "nvenc", "qsv", "amf", or "software"
 max_bitrate_kbps = 50000
 min_bitrate_kbps = 1000
 hybrid_gpu_hook = true            # Keep outputs on the GPU that drives them, on hybrid laptops (Windows)
+capture_backend = "auto"          # "auto", "dxgi", "wgc" (Windows) - see below before changing
 source = "display"                # "display" (default); "v4l2" reserved for RK3588 box
 source_device = ""                # e.g. "/dev/video0" when source = "v4l2"
 
@@ -111,6 +112,7 @@ These keys are only meaningful when `network.mode = "manual"`.
 | `max_bitrate_kbps` | `50000` | Adaptive bitrate ceiling. |
 | `min_bitrate_kbps` | `1000` | Adaptive bitrate floor. |
 | `hybrid_gpu_hook` | `true` | Windows only. On a laptop with both an integrated and a discrete GPU, DXGI resolves a GPU preference for the process and then *reparents* display outputs onto the resolved GPU — which routinely drags capture onto the integrated GPU, and with it the encoder, since the encoder is created on the capture device. This suppresses that resolution so outputs stay on the adapter that actually drives them. Set `false` to restore the OS behaviour without rebuilding. No effect on single-GPU machines or off Windows. |
+| `capture_backend` | `"auto"` | Windows only. Which desktop source the capture loop uses. `"auto"` prefers **Windows.Graphics.Capture** and falls back to **DXGI Desktop Duplication** on the secure desktop; `"dxgi"` forces Desktop Duplication; `"wgc"` forces WGC, which still falls back to DXGI at the lock screen because WGC cannot capture it. WGC exists because Desktop Duplication can bake the mouse pointer into every frame with no way to remove it, while WGC omits it at the source - see [Capture](./capture). **Caveat:** while a WGC session runs, the *host's own display* shows a second cursor, and that is not removable from the capture side; choose `"dxgi"` if somebody uses the machine locally while it streams. Unknown values are treated as `"auto"` with a log line. No effect off Windows. |
 | `source` | `"display"` | Video input backend. Only `"display"` is wired up today; `"v4l2"` is reserved for the RK3588 streaming box backend. |
 | `source_device` | `""` | Device identifier when `source` is not `"display"` (e.g. `/dev/video0`). |
 

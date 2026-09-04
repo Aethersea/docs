@@ -23,9 +23,37 @@ That second device is always created on the **same adapter as capture**. Encodin
 
 The first subscriber may also be given its own device retroactively if both sessions race to subscribe.
 
+## Windows — Windows.Graphics.Capture
+
+Since 2026-09, Windows has two capture sources, selected by `[video] capture_backend` (`auto` by default). **Windows.Graphics.Capture (WGC)** is preferred where it works; **DXGI Desktop Duplication** remains the fallback and is still what captures the lock screen.
+
+WGC exists here for one reason: when an output's hardware cursor plane falls back to composition — which some games trigger for the whole output — Desktop Duplication hands back frames with the mouse pointer already painted in, and offers **no API to remove it**. In overlay cursor mode the client then draws its own cursor on top of a baked one and the user sees two. `GraphicsCaptureSession.IsCursorCaptureEnabled = false` tells the compositor to omit the pointer at the source, which is the only real fix.
+
+### It runs in a separate process, under the interactive user's token
+
+WGC **refuses a SYSTEM process outright**: `GraphicsCaptureSession::IsSupported()` throws `0x80070424` (`ERROR_SERVICE_DOES_NOT_EXIST`) and `CreateForMonitor` returns the same, with or without the calling thread impersonating the interactive user. Leviathan's streaming child runs as SYSTEM deliberately — that is what lets Desktop Duplication capture the lock screen — so the WinRT half lives in `LeviathanWGC.exe`, launched beside it with `WTSQueryUserToken` + `CreateProcessAsUser`.
+
+Frames come back through a shared `SHARED_NTHANDLE | SHARED_KEYEDMUTEX` texture plus a frame-ready event: the same keyed-mutex bracket the in-process texture pool already uses, with the producer role moved across a process boundary. The helper is given the capture device's adapter LUID because a shared texture cannot cross adapters.
+
+`LeviathanWGC.exe` is looked up **beside `leviathan.exe`** and is optional — without it the capture loop simply stays on DXGI.
+
+### Hybrid switching
+
+The two sources swap live, and the swap forces a keyframe:
+
+- **Secure desktop** (lock screen, UAC, Ctrl-Alt-Del) — WGC cannot see it, so capture falls back to DXGI, and the helper process is **stopped**. That second part is not housekeeping: a live WGC session keeps the output off the hardware cursor plane, so a helper left running while DXGI captures makes DXGI bake the pointer into every frame — the exact defect this backend exists to fix. Returning to the Default desktop relaunches the helper.
+- **Resolution change** — the helper republishes at the new size (`RESIZE`), the capture loop rebuilds its texture pool and the encoder reconfigures, exactly as the DXGI path does on a mode switch.
+- **Adapter swap or device reset** — the shared texture was opened on the destroyed device, so the helper is relaunched against the new adapter.
+
+### Known cost: a second cursor on the host's own display
+
+While a WGC session is running, the **host's own physical display shows two cursors**, and `IsCursorCaptureEnabled = false` does *not* remove it — the property governs the captured frames, not what the compositor does to the display. A DXGI session does not do this.
+
+This is a deliberate trade: during a streaming session nobody is usually sitting at the host, and the stream itself is correct. Set `capture_backend = "dxgi"` on a machine somebody also uses locally.
+
 ## Windows — DXGI Desktop Duplication
 
-On Windows, Leviathan uses the **DXGI Desktop Duplication API** to capture frames directly from the GPU framebuffer as `BGRA8` textures. This is a zero-copy path that does not require any intermediate CPU copy on the way into the encoder.
+Leviathan uses the **DXGI Desktop Duplication API** to capture frames directly from the GPU framebuffer as `BGRA8` textures. This is a zero-copy path that does not require any intermediate CPU copy on the way into the encoder.
 
 - Supports all GPUs (NVIDIA, AMD, Intel)
 - Always captures the **primary display** (display ID `0`); multi-monitor selection is not yet exposed in the config schema
@@ -98,6 +126,8 @@ There are two cursor rendering paths, and they are sized to agree:
 
 - **Overlay path** (Windows default / Local Cursor mode): the cursor is captured via `GetIconInfo` + `DrawIconEx`, encoded as a lossless WebP, sent over the overlay DataChannel, and drawn by the client as an `<img>` on top of the video.
 - **GPU-composite path** (pointer-lock / relative mode): the cursor is taken from DXGI Desktop Duplication's `GetFramePointerShape` and composited straight into the video frame by a D3D11 compute shader.
+
+Under the **WGC backend** the second path does not run at all: WGC carries no pointer metadata and there is nothing to composite. The same decision — should the video carry a cursor? — is instead pushed to the compositor as `IsCursorCaptureEnabled`, so the frames arrive already correct. The overlay path is unchanged: it reads the cursor through `GetCursorInfo`, which is independent of the capture source. The `[CursorDiag]` line names the live source as `backend=wgc` or `backend=dxgi`, and reports the DXGI pointer readings as unavailable (`-1`) under WGC rather than leaving a stale duplication reading to be read as live.
 
 Which path is active is **per-display state owned by the CaptureHub**, not by individual sessions: each pipeline registers its client's preference (`CaptureHub.SetCursorInVideo`), and the hub applies the aggregate — the cursor is composited into the video only when *every* live subscriber wants it there; any overlay-mode session wins. Preferences are re-settled when a subscriber leaves and re-asserted on a fresh capture instance. Pipelines never write the capture layer's cursor flag directly — a session's default snapping the shared flag used to leave a sibling client rendering its overlay cursor on top of the video-blended one (two visible cursors), with the client's reconnect resync unable to repair it.
 
